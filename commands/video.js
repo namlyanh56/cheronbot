@@ -6,7 +6,7 @@
 
 const CommandBase = require('./base');
 const { spawn } = require('child_process');
-const { createTempFile, cleanupFiles, isValidUrl } = require('../utils/helpers');
+const { createTempFile, cleanupFiles, isValidUrl, checkCommand } = require('../utils/helpers');
 const { identifyPlatform, isVideoSupported, getPlatformArgs, getSupportedPlatformsText } = require('../utils/url-parser');
 const fsPromises = require('fs').promises;
 const path = require('path');
@@ -14,6 +14,8 @@ const config = require('../config');
 
 // Video format selector: prefer mp4, fallback to best available
 const VIDEO_FORMAT_SELECTOR = 'best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best';
+// Download timeout: 120 seconds
+const DOWNLOAD_TIMEOUT = 120000;
 
 class VideoCommand extends CommandBase {
     constructor() {
@@ -29,22 +31,38 @@ class VideoCommand extends CommandBase {
     }
 
     /**
-     * Execute yt-dlp using python3 -m yt_dlp for plugin support
-     * This uses python3 which is in the allowed commands list in helpers.js
+     * Execute yt-dlp as binary CLI
+     * Uses yt-dlp binary directly (not python3 -m yt_dlp)
      */
     spawnYtDlp(args) {
         return new Promise((resolve, reject) => {
-            // python3 is in the allowed commands list in helpers.js
-            const proc = spawn('python3', ['-m', 'yt_dlp', ...args]);
+            const proc = spawn('yt-dlp', args);
             let stdout = '';
             let stderr = '';
+            
+            // Set timeout
+            const timeout = setTimeout(() => {
+                proc.kill();
+                reject(new Error('yt-dlp timeout after 120 seconds'));
+            }, DOWNLOAD_TIMEOUT);
+            
             proc.stdout.on('data', (data) => stdout += data);
             proc.stderr.on('data', (data) => stderr += data);
+            
             proc.on('close', (code) => {
+                clearTimeout(timeout);
                 if (code === 0) resolve(stdout);
                 else reject(new Error(stderr || `yt-dlp failed with code ${code}`));
             });
-            proc.on('error', (err) => reject(err));
+            
+            proc.on('error', (err) => {
+                clearTimeout(timeout);
+                if (err.code === 'ENOENT') {
+                    reject(new Error('yt-dlp not found. Please install yt-dlp binary.'));
+                } else {
+                    reject(err);
+                }
+            });
         });
     }
 
@@ -66,6 +84,17 @@ class VideoCommand extends CommandBase {
                 '• Facebook: https://fb.watch/xxx\n' +
                 '• Twitter/X: https://x.com/user/status/xxx\n\n' +
                 `🌐 *Platform Didukung:*\n${supportedPlatforms.video}`
+            );
+        }
+
+        // Check if yt-dlp is available
+        const ytdlpAvailable = await checkCommand('yt-dlp');
+        if (!ytdlpAvailable) {
+            return await this.reply(sock, from, msg, 
+                '❌ *Dependency Tidak Tersedia*\n\n' +
+                '😔 yt-dlp belum terinstal di sistem.\n' +
+                '📧 Hubungi admin untuk menginstal yt-dlp.\n\n' +
+                '💡 Instalasi: `pip install yt-dlp` atau `brew install yt-dlp`'
             );
         }
 
@@ -196,7 +225,11 @@ class VideoCommand extends CommandBase {
             
             // Friendly error messages
             let errorMsg = '❌ Gagal download video.';
-            if (error.message.includes('too large') || error.message.includes('>200MB')) {
+            if (error.message.includes('yt-dlp not found') || error.message.includes('ENOENT')) {
+                errorMsg = '❌ *Dependency Tidak Tersedia*\n\n😔 yt-dlp belum terinstal.\n📧 Hubungi admin.';
+            } else if (error.message.includes('timeout')) {
+                errorMsg = '⏱️ Proses download timeout (>120 detik). Video terlalu besar atau koneksi lambat.';
+            } else if (error.message.includes('too large') || error.message.includes('>200MB')) {
                 errorMsg = '📦 Waduh, filenya kegedean bro (>200MB)! Coba video yang lebih pendek ya 😅';
             } else if (error.message.includes('Unsupported URL') || error.message.includes('not supported')) {
                 errorMsg = '❌ URL tidak didukung. Coba platform lain.';
@@ -204,7 +237,7 @@ class VideoCommand extends CommandBase {
                 errorMsg = '🔒 Video ini private atau restricted.';
             } else if (error.message.includes('Not available') || error.message.includes('removed')) {
                 errorMsg = '❌ Video tidak tersedia atau sudah dihapus.';
-            } else if (error.message.includes('timeout') || error.message.includes('TransportError')) {
+            } else if (error.message.includes('TransportError')) {
                 errorMsg = '⏱️ Koneksi timeout. Coba lagi nanti!';
             } else if (error.message.includes('Unable to download') || error.message.includes('Connection refused')) {
                 errorMsg = '🌐 Koneksi gagal. Coba lagi nanti!';

@@ -299,6 +299,19 @@ function isValidUrl(string) {
     return /^https?:\/\//i.test(string);
 }
 
+/**
+ * Check if a command/binary is available in the system
+ * @param {string} command - Command name to check (e.g., 'yt-dlp', 'ffmpeg')
+ * @returns {Promise<boolean>} True if command exists, false otherwise
+ */
+async function checkCommand(command) {
+    return new Promise((resolve) => {
+        const proc = spawn('which', [command]);
+        proc.on('close', (code) => resolve(code === 0));
+        proc.on('error', () => resolve(false));
+    });
+}
+
 module.exports = {
     spawnPromise,
     sleep,
@@ -315,5 +328,6 @@ module.exports = {
     cleanupFile,
     periodicTempCleanup,
     isValidUrl,
-    lazyRequire
+    lazyRequire,
+    checkCommand
 };

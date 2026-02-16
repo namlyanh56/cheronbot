@@ -253,45 +253,88 @@ class Config {
 
     /**
      * Check if sender matches a specific owner ID
-     * Robust: exact match, digit-only fallback, and normalized forms.
-     * @param {string} senderId - Sender JID
-     * @param {string} ownerId - Owner ID to check against
+     * Robust: exact match, device-suffix stripping, digit-only fallback, and normalized forms.
+     *
+     * FIX: Perbaikan utama dibanding versi sebelumnya:
+     *   - Langkah 2: Strip device suffix (:0, :1, dll.) secara eksplisit SEBELUM
+     *     digit comparison, sehingga "6288238502311:1@s.whatsapp.net" → "6288238502311@s.whatsapp.net"
+     *     dan "LID_VALUE:0@lid" → "LID_VALUE@lid" bisa match langsung.
+     *   - Langkah 3: Digit-only comparison hanya mengambil bagian SEBELUM '@' dan SEBELUM ':'
+     *     untuk menghindari kontaminasi digit dari device suffix.
+     *   - Langkah 3: Minimum 10 digit untuk mencegah false-positive dari digit pendek.
+     *
+     * @param {string} senderId - Sender JID (dari WhatsApp)
+     * @param {string} ownerId - Owner ID (dari .env / config)
      * @returns {boolean}
      */
     _matchesOwnerId(senderId, ownerId) {
         if (!ownerId || !senderId) return false;
         
-        // 1) Direct match
+        // 1) Direct exact match (fastest path)
         if (senderId === ownerId) {
             return true;
         }
 
-        // 2) Fallback: compare digit-only (handles @lid, @s.whatsapp.net, device suffix like :1@)
-        const senderDigits = senderId.replace(/\D/g, '');
-        const ownerDigits  = ownerId.replace(/\D/g, '');
-        if (senderDigits && ownerDigits && senderDigits === ownerDigits) {
+        // 2) Strip device suffix (:0, :1, etc.) then compare
+        //    WhatsApp multi-device sering mengirim JID seperti:
+        //      "6288238502311:1@s.whatsapp.net"  (device 1, private)
+        //      "LID_VALUE:0@lid"                 (device 0, group LID)
+        //    Stripping menghasilkan:
+        //      "6288238502311@s.whatsapp.net"
+        //      "LID_VALUE@lid"
+        let strippedSender = senderId;
+        if (senderId.includes(':') && senderId.includes('@')) {
+            const atIndex = senderId.indexOf('@');
+            const beforeAt = senderId.substring(0, atIndex);
+            const afterAt = senderId.substring(atIndex); // termasuk '@'
+            const numberPart = beforeAt.split(':')[0];
+            strippedSender = numberPart + afterAt;
+        }
+        if (strippedSender === ownerId) {
+            return true;
+        }
+
+        // 3) Digit-only fallback: bandingkan hanya digit dari bagian nomor (sebelum @ dan :)
+        //    Ini menangani kasus:
+        //      sender "6288238502311@s.whatsapp.net" vs owner "6288238502311@lid" (beda suffix)
+        //      sender "6288238502311" (plain) vs owner "6288238502311@s.whatsapp.net"
+        //    CATATAN: Hanya efektif jika kedua sisi berbasis nomor telepon.
+        //    Untuk LID opaque (bukan nomor telepon), hanya langkah 1 & 2 yang bisa match.
+        const senderNumberPart = (senderId.includes('@') ? senderId.split('@')[0] : senderId).split(':')[0];
+        const ownerNumberPart  = (ownerId.includes('@') ? ownerId.split('@')[0] : ownerId).split(':')[0];
+        
+        const senderDigits = senderNumberPart.replace(/\D/g, '');
+        const ownerDigits  = ownerNumberPart.replace(/\D/g, '');
+        
+        if (senderDigits && ownerDigits && senderDigits.length >= 10 && senderDigits === ownerDigits) {
             return true;
         }
         
-        // 3) Existing normalization for @s.whatsapp.net owners
+        // 4) Normalisasi khusus untuk owner @s.whatsapp.net
+        //    Menangani sender tanpa suffix atau dengan suffix berbeda
         if (ownerId.endsWith('@s.whatsapp.net')) {
             let normalizedSender = senderId;
             
-            // Participant format (group/device): split before ':' then add @s.whatsapp.net
+            // Participant/device format: ambil bagian sebelum ':'
             if (senderId.includes(':')) {
                 normalizedSender = senderId.split(':')[0] + '@s.whatsapp.net';
             }
             
-            // Normalize suffix to @s.whatsapp.net if needed
+            // Jika masih belum @s.whatsapp.net, normalisasi dari digit
             if (!normalizedSender.endsWith('@s.whatsapp.net')) {
                 const number = normalizedSender.replace(/\D/g, '');
-                normalizedSender = `${number}@s.whatsapp.net`;
+                if (number) {
+                    normalizedSender = `${number}@s.whatsapp.net`;
+                }
             }
             
             return normalizedSender === ownerId;
         }
         
-        // 4) If ownerId is @lid, digit-only fallback already covers it
+        // 5) Untuk owner @lid: stripped comparison sudah ditangani di langkah 2.
+        //    Jika LID adalah identifier opaque (bukan nomor telepon),
+        //    user HARUS menambahkan LID aktual ke BOT_OWNER_ID di .env
+        //    Gunakan debug log di handler.js untuk mengetahui LID aktual.
         return false;
     }
 

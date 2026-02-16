@@ -142,6 +142,21 @@ class SecurityCommand extends CommandBase {
                     
                 case 'list':
                     return await this.listBlockedUsers(sock, from, msg);
+                
+                case 'allow':
+                    return await this.handleAllow(sock, from, msg, args.slice(1));
+                
+                case 'unallow':
+                case 'revoke':
+                    return await this.handleUnallow(sock, from, msg, args.slice(1));
+                
+                case 'users':
+                case 'stats':
+                    return await this.handleUserStats(sock, from, msg);
+                
+                case 'allowlist':
+                case 'allowed':
+                    return await this.handleAllowlist(sock, from, msg);
                     
                 default:
                     return await this.showHelp(sock, from, msg);
@@ -182,7 +197,13 @@ class SecurityCommand extends CommandBase {
 *🗑️ Maintenance*
 \`.security clearcache\` - Bersihkan cache bot
 
-*👤 Manajemen Pengguna*
+*👤 Manajemen Pengguna - Akses*
+\`.security allow <nomor>\` - Izinkan pengguna menggunakan bot
+\`.security unallow <nomor>\` - Cabut akses pengguna
+\`.security users\` - Lihat statistik pendaftaran & akses
+\`.security allowlist\` - Lihat daftar pengguna yang diizinkan
+
+*👤 Manajemen Pengguna - Blokir*
 \`.security block <nomor> <menit>\` - Blokir pengguna
 \`.security unblock <nomor>\` - Buka blokir
 \`.security unblock all\` - Buka blokir semua
@@ -209,7 +230,9 @@ class SecurityCommand extends CommandBase {
 
 ⏱️ *Uptime:* ${uptimeStr}
 
-📊 *Statistik*
+📊 *Statistik Pengguna*
+• Pengguna Terdaftar: ${stats.registeredUsers}
+• Pengguna Diizinkan: ${stats.allowedUsers}
 • Pengguna Terblokir: ${stats.blockedUsers}
 • Aktivitas Mencurigakan: ${stats.suspiciousActivityTracked}
 • Event Keamanan: ${stats.securityEvents}
@@ -961,6 +984,165 @@ class SecurityCommand extends CommandBase {
         if (blockedUsers.length > 10) {
             response += `... dan ${blockedUsers.length - 10} lainnya`;
         }
+
+        await this.reply(sock, from, msg, response);
+        await this.react(sock, msg, '✅');
+    }
+
+    /**
+     * Handle allow user subcommand
+     * @param {import('@whiskeysockets/baileys').WASocket} sock
+     * @param {string} from
+     * @param {Object} msg
+     * @param {string[]} args
+     */
+    async handleAllow(sock, from, msg, args) {
+        if (args.length === 0) {
+            await this.reply(sock, from, msg, 
+                '⚠️ *Format salah*\n\n' +
+                'Gunakan: `.security allow <nomor>`\n' +
+                'Contoh: `.security allow 6281234567890`');
+            return;
+        }
+
+        // Sanitize and validate input
+        const userInput = args[0].replace(/[^\d@\.a-z]/gi, ''); // Remove special chars except @, ., digits, letters
+        
+        if (!userInput || userInput.length < 10) {
+            await this.reply(sock, from, msg, 
+                '⚠️ *Input tidak valid*\n\n' +
+                'Nomor telepon harus minimal 10 digit.\n' +
+                'Contoh: `.security allow 6281234567890`');
+            return;
+        }
+        
+        const sender = msg.key.participant || from;
+
+        // Normalize the user ID
+        const result = security.allowUser(userInput, sender);
+
+        if (!result.success) {
+            await this.reply(sock, from, msg, `❌ *Gagal:* ${result.reason}`);
+            return;
+        }
+
+        const response = 
+`✅ *AKSES DIBERIKAN*
+
+Pengguna *${result.userId.split('@')[0]}* telah diizinkan menggunakan bot.
+
+Pengguna sekarang dapat menggunakan semua perintah bot.`;
+
+        await this.reply(sock, from, msg, response);
+        await this.react(sock, msg, '✅');
+    }
+
+    /**
+     * Handle unallow (revoke) user subcommand
+     * @param {import('@whiskeysockets/baileys').WASocket} sock
+     * @param {string} from
+     * @param {Object} msg
+     * @param {string[]} args
+     */
+    async handleUnallow(sock, from, msg, args) {
+        if (args.length === 0) {
+            await this.reply(sock, from, msg, 
+                '⚠️ *Format salah*\n\n' +
+                'Gunakan: `.security unallow <nomor>`\n' +
+                'Contoh: `.security unallow 6281234567890`');
+            return;
+        }
+
+        // Sanitize and validate input
+        const userInput = args[0].replace(/[^\d@\.a-z]/gi, ''); // Remove special chars except @, ., digits, letters
+        
+        if (!userInput || userInput.length < 10) {
+            await this.reply(sock, from, msg, 
+                '⚠️ *Input tidak valid*\n\n' +
+                'Nomor telepon harus minimal 10 digit.\n' +
+                'Contoh: `.security unallow 6281234567890`');
+            return;
+        }
+        
+        const result = security.revokeAllowedUser(userInput);
+
+        if (!result.success) {
+            await this.reply(sock, from, msg, `❌ *Gagal:* ${result.reason}`);
+            return;
+        }
+
+        const response = 
+`🔒 *AKSES DICABUT*
+
+Akses pengguna *${result.userId.split('@')[0]}* telah dicabut.
+
+Pengguna tidak lagi dapat menggunakan perintah bot.`;
+
+        await this.reply(sock, from, msg, response);
+        await this.react(sock, msg, '✅');
+    }
+
+    /**
+     * Handle user stats subcommand
+     * @param {import('@whiskeysockets/baileys').WASocket} sock
+     * @param {string} from
+     * @param {Object} msg
+     */
+    async handleUserStats(sock, from, msg) {
+        const stats = security.getUserAccessStats();
+
+        const response = 
+`📊 *STATISTIK PENGGUNA*
+
+👥 *Total Pengguna*
+• Terdaftar: ${stats.totalRegistered}
+• Diizinkan: ${stats.totalAllowed}
+• Terblokir: ${stats.totalBlocked}
+
+💡 *Keterangan:*
+• _Terdaftar_: Pengguna yang pernah menghubungi bot
+• _Diizinkan_: Pengguna yang dapat menggunakan perintah
+• _Terblokir_: Pengguna yang diblokir sementara
+
+Gunakan \`.security allowlist\` untuk melihat daftar pengguna yang diizinkan.
+Gunakan \`.security list\` untuk melihat daftar pengguna terblokir.`;
+
+        await this.reply(sock, from, msg, response);
+        await this.react(sock, msg, '✅');
+    }
+
+    /**
+     * Handle allowlist subcommand
+     * @param {import('@whiskeysockets/baileys').WASocket} sock
+     * @param {string} from
+     * @param {Object} msg
+     */
+    async handleAllowlist(sock, from, msg) {
+        const allowedUsers = security.getAllowedUsers();
+        
+        if (allowedUsers.length === 0) {
+            await this.reply(sock, from, msg, 
+                '📋 *DAFTAR PENGGUNA DIIZINKAN*\n\n' +
+                'Belum ada pengguna yang diizinkan.\n\n' +
+                'Gunakan `.security allow <nomor>` untuk menambahkan pengguna.');
+            await this.react(sock, msg, '✅');
+            return;
+        }
+
+        let response = `✅ *DAFTAR PENGGUNA DIIZINKAN (${allowedUsers.length})*\n\n`;
+        
+        for (const user of allowedUsers.slice(0, 20)) {
+            const allowedDate = new Date(user.allowedAt);
+            const dateStr = allowedDate.toLocaleDateString('id-ID');
+            response += `• ${user.userIdShort}\n`;
+            response += `  Diizinkan: ${dateStr} oleh ${user.allowedByShort}\n\n`;
+        }
+
+        if (allowedUsers.length > 20) {
+            response += `... dan ${allowedUsers.length - 20} lainnya\n\n`;
+        }
+
+        response += `\nGunakan \`.security unallow <nomor>\` untuk mencabut akses.`;
 
         await this.reply(sock, from, msg, response);
         await this.react(sock, msg, '✅');

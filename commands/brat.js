@@ -93,10 +93,11 @@ class BratCommand extends CommandBase {
         // Check if dependencies are available
         if (!this.canvas || !this.sharp) {
             return await this.reply(sock, from, msg,
-                '❌ Feature not available!\n\n' +
-                'The brat command requires Canvas and Sharp libraries.\n' +
-                'These dependencies are currently disabled via environment configuration.\n\n' +
-                'Contact admin to enable: ENABLE_CANVAS=true, ENABLE_SHARP=true'
+                '❌ *Fitur Tidak Tersedia*\n\n' +
+                '😔 Perintah brat memerlukan Canvas dan Sharp.\n' +
+                'Dependensi ini sedang dinonaktifkan.\n\n' +
+                '💡 Hubungi admin untuk mengaktifkan:\n' +
+                'ENABLE_CANVAS=true, ENABLE_SHARP=true'
             );
         }
 
@@ -107,15 +108,17 @@ class BratCommand extends CommandBase {
         // Validation
         if (!text || text.trim() === '') {
             return await this.reply(sock, from, msg, 
-                '❌ Please provide text!\n\n' +
-                '*Usage:* `.brat your text here`\n' +
-                '*Example:* `.brat brat`'
+                '❌ *Teks Diperlukan*\n\n' +
+                '📝 *Cara Pakai:*\n' +
+                '`.brat teks anda di sini`\n\n' +
+                '💡 *Contoh:*\n' +
+                '`.brat brat`'
             );
         }
 
         if (text.length > 500) {
             return await this.reply(sock, from, msg, 
-                '❌ Text too long! Maximum 500 characters.'
+                '❌ *Teks Terlalu Panjang*\n\n😔 Maksimal 500 karakter.\n💡 Silakan gunakan teks yang lebih pendek.'
             );
         }
 
@@ -142,7 +145,7 @@ class BratCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Failed to generate sticker.');
+            await this.reply(sock, from, msg, '❌ *Gagal Membuat Stiker*\n\n😔 Maaf, terjadi kesalahan.\n💡 Silakan coba lagi.');
         }
     }
 

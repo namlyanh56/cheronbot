@@ -29,7 +29,13 @@ class RPSCommand extends CommandBase {
 
         if (!args[0]) {
             return await this.reply(sock, from, msg, 
-                '✊✋✌️ *Rock Paper Scissors*\n\nUsage: .rps <choice>\n\nChoices:\n• rock\n• paper\n• scissors');
+                '✊✋✌️ *Gunting Batu Kertas*\n\n' +
+                '📝 *Cara Pakai:*\n' +
+                '`.rps <pilihan>`\n\n' +
+                '💡 *Pilihan:*\n' +
+                '• rock (batu)\n' +
+                '• paper (kertas)\n' +
+                '• scissors (gunting)');
         }
 
         await this.react(sock, msg, '✊');
@@ -39,20 +45,20 @@ class RPSCommand extends CommandBase {
             
             if (!this.choices.includes(userChoice)) {
                 return await this.reply(sock, from, msg, 
-                    '❌ Invalid choice! Use: rock, paper, or scissors');
+                    '❌ *Pilihan Tidak Valid*\n\n💡 Gunakan: rock, paper, atau scissors');
             }
 
             const botChoice = this.choices[Math.floor(Math.random() * 3)];
             const result = this.determineWinner(userChoice, botChoice);
 
             const resultEmoji = result === 'win' ? '🎉' : result === 'lose' ? '😔' : '🤝';
-            const resultText = result === 'win' ? 'You Win!' : result === 'lose' ? 'You Lose!' : 'It\'s a Tie!';
+            const resultText = result === 'win' ? 'Kamu Menang!' : result === 'lose' ? 'Kamu Kalah!' : 'Seri!';
 
             const response = 
-`✊✋✌️ *Rock Paper Scissors*
+`✊✋✌️ *Gunting Batu Kertas*
 
-You chose: ${this.emojis[userChoice]} ${userChoice}
-Bot chose: ${this.emojis[botChoice]} ${botChoice}
+Pilihan kamu: ${this.emojis[userChoice]} ${userChoice}
+Pilihan bot: ${this.emojis[botChoice]} ${botChoice}
 
 ${resultEmoji} **${resultText}**`;
 
@@ -61,7 +67,7 @@ ${resultEmoji} **${resultText}**`;
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Game error occurred. Try again!');
+            await this.reply(sock, from, msg, '❌ *Gagal Bermain*\n\n😔 Maaf, terjadi kesalahan.\n💡 Silakan coba lagi!');
         }
     }
 

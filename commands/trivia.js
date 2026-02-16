@@ -60,24 +60,24 @@ class TriviaCommand extends CommandBase {
                 }[selectedDifficulty];
 
                 const response = 
-`🎯 *Trivia Quiz*
+`🎯 *Kuis Trivia*
 
-${difficultyEmoji} Difficulty: ${selectedDifficulty.toUpperCase()}
-📚 Category: ${question.category}
+${difficultyEmoji} Tingkat: ${selectedDifficulty.toUpperCase()}
+📚 Kategori: ${question.category}
 
-❓ Question:
+❓ Pertanyaan:
 ${decodedQuestion}
 
-Options:
+Pilihan:
 ${answerList}
 
-_Answer will be revealed in replies!_`;
+_Jawaban akan ditampilkan dalam beberapa detik!_`;
 
                 await this.reply(sock, from, msg, response);
                 
                 // Send answer after a delay (in a follow-up message)
                 setTimeout(async () => {
-                    const answerResponse = `✅ *Answer:* ${correctAnswer}`;
+                    const answerResponse = `✅ *Jawaban:* ${correctAnswer}`;
                     await this.reply(sock, from, msg, answerResponse);
                 }, 5000);
 
@@ -89,7 +89,7 @@ _Answer will be revealed in replies!_`;
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Failed to fetch trivia question. Try again!');
+            await this.reply(sock, from, msg, '❌ *Gagal Mengambil Pertanyaan*\n\n😔 Maaf, terjadi kesalahan.\n💡 Silakan coba lagi!');
         }
     }
 

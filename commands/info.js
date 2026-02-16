@@ -62,7 +62,7 @@ ${descTrimmed}`;
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Gagal mendapatkan informasi grup.');
+            await this.reply(sock, from, msg, '❌ *Gagal Mengambil Informasi*\n\n😔 Maaf, tidak dapat mengambil informasi grup.\n💡 Pastikan bot adalah admin grup.');
         }
     }
 }

@@ -27,7 +27,7 @@ class ToImgCommand extends CommandBase {
         const quotedSticker = msg.message.extendedTextMessage?.contextInfo?.quotedMessage?.stickerMessage;
 
         if (!quotedSticker) {
-            return await this.reply(sock, from, msg, '❌ Please reply to a sticker!\n\nUsage: Reply to a sticker and type .toimg');
+            return await this.reply(sock, from, msg, '❌ *Stiker Diperlukan*\n\n📝 Reply ke stiker dan ketik `.toimg`\n\n💡 *Cara Pakai:*\nReply stiker dengan perintah `.toimg`');
         }
 
         await this.react(sock, msg, '🖼️');
@@ -60,7 +60,7 @@ class ToImgCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Failed to convert sticker. Make sure FFmpeg is installed.');
+            await this.reply(sock, from, msg, '❌ *Gagal Konversi Stiker*\n\n😔 Maaf, gagal mengonversi stiker.\n💡 Pastikan FFmpeg terinstal.');
         } finally {
             // Cleanup
             await cleanupFile(webpFile);

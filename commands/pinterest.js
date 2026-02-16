@@ -26,7 +26,7 @@ class PinterestCommand extends CommandBase {
         const { from } = context;
 
         if (!args[0]) {
-            return await this.reply(sock, from, msg, '❓ What do you want to search for?\n\nExample: .pinterest Cyberpunk City');
+            return await this.reply(sock, from, msg, '❓ *Apa yang Ingin Dicari?*\n\n📝 *Cara Pakai:*\n`.pinterest <kata kunci>`\n\n💡 *Contoh:*\n`.pinterest Cyberpunk City`');
         }
 
         await this.react(sock, msg, '📌');
@@ -48,10 +48,10 @@ class PinterestCommand extends CommandBase {
                 } catch (error) {
                     if (error.message.includes('Puppeteer is not available')) {
                         return await this.reply(sock, from, msg,
-                            '❌ Feature not available!\n\n' +
-                            'Pinterest search requires Puppeteer library.\n' +
-                            'This dependency is currently disabled via environment configuration.\n\n' +
-                            'Contact admin to enable: ENABLE_PUPPETEER=true'
+                            '❌ *Fitur Tidak Tersedia*\n\n' +
+                            '😔 Pencarian Pinterest memerlukan Puppeteer.\n' +
+                            'Dependensi ini sedang dinonaktifkan.\n\n' +
+                            '💡 Hubungi admin untuk mengaktifkan: ENABLE_PUPPETEER=true'
                         );
                     }
                     throw error;
@@ -96,7 +96,7 @@ class PinterestCommand extends CommandBase {
                 });
 
                 if (allScrapedUrls.length === 0) {
-                    return await this.reply(sock, from, msg, '❌ No images found. Try a different search term.');
+                    return await this.reply(sock, from, msg, '❌ *Tidak Ada Gambar*\n\n😔 Tidak ada gambar yang ditemukan.\n💡 Coba kata kunci lain.');
                 }
 
                 // Cache all scraped URLs for 30 minutes (pool of images)
@@ -135,7 +135,7 @@ class PinterestCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Failed to fetch images. Please try again later.');
+            await this.reply(sock, from, msg, '❌ *Gagal Mengambil Gambar*\n\n😔 Maaf, terjadi kesalahan.\n💡 Silakan coba lagi nanti.');
         } finally {
             if (page) {
                 await browserManager.closePage(page);
@@ -209,7 +209,7 @@ class PinterestCommand extends CommandBase {
                 await this.reply(sock, from, msg, `📌 Sent ${successCount} of ${totalRequested} images (some failed to download)`);
             }
         } else {
-            await this.reply(sock, from, msg, '❌ Could not download images. Please try a different search term.');
+            await this.reply(sock, from, msg, '❌ *Tidak Bisa Mengunduh Gambar*\n\n😔 Maaf, gagal mengunduh gambar.\n💡 Coba kata kunci lain.');
         }
     }
 }

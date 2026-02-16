@@ -43,7 +43,7 @@ class QuoteCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Gagal menampilkan kutipan.');
+            await this.reply(sock, from, msg, '❌ *Gagal Menampilkan Kutipan*\n\n😔 Maaf, terjadi kesalahan.\n💡 Silakan coba lagi.');
         }
     }
 

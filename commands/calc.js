@@ -22,7 +22,14 @@ class CalcCommand extends CommandBase {
 
         if (!args[0]) {
             return await this.reply(sock, from, msg, 
-                '🧮 *Calculator*\n\nUsage: .calc <expression>\n\nExamples:\n• .calc 5 + 3\n• .calc 10 * 2.5\n• .calc sqrt(16)\n• .calc 2^8');
+                '🧮 *Kalkulator*\n\n' +
+                '📝 *Cara Pakai:*\n' +
+                '`.calc <ekspresi>`\n\n' +
+                '💡 *Contoh:*\n' +
+                '• `.calc 5 + 3`\n' +
+                '• `.calc 10 * 2.5`\n' +
+                '• `.calc sqrt(16)`\n' +
+                '• `.calc 2^8`');
         }
 
         await this.react(sock, msg, '🧮');
@@ -32,17 +39,17 @@ class CalcCommand extends CommandBase {
             const result = this.safeEval(expression);
 
             const response = 
-`🧮 *Calculator*
+`🧮 *Kalkulator*
 
-📝 Expression: \`${expression}\`
-✅ Result: **${result}**`;
+📝 Ekspresi: \`${expression}\`
+✅ Hasil: *${result}*`;
 
             await this.reply(sock, from, msg, response);
             await this.react(sock, msg, '✅');
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Invalid expression. Please check your syntax.');
+            await this.reply(sock, from, msg, '❌ *Ekspresi Tidak Valid*\n\n😔 Maaf, ekspresi matematika Anda tidak valid.\n💡 Silakan periksa sintaks dan coba lagi.');
         }
     }
 

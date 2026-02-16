@@ -163,7 +163,7 @@ class SecurityCommand extends CommandBase {
             }
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Perintah keamanan gagal: ' + error.message);
+            await this.reply(sock, from, msg, '❌ *Perintah Keamanan Gagal*\n\n😔 Maaf, terjadi kesalahan.\n💡 Error: ' + error.message);
         }
     }
 
@@ -462,7 +462,7 @@ class SecurityCommand extends CommandBase {
             await this.react(sock, msg, '✅');
         } catch (error) {
             this.logError(error, { context: 'logs-retrieval' });
-            await this.reply(sock, from, msg, '❌ Gagal mengambil log: ' + error.message);
+            await this.reply(sock, from, msg, '❌ *Gagal Mengambil Log*\n\n😔 Maaf, tidak dapat mengambil log.\n💡 Error: ' + error.message);
         }
     }
 

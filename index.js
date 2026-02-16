@@ -82,7 +82,7 @@ async function startBot() {
                     process.exit(0);
                 }
             } else if (connection === 'open') {
-                logger.info(`✅ ${config.bot.name} connected to WhatsApp!`);
+                logger.info(`✅ Cheron Bot Asisten berhasil terhubung ke WhatsApp!`);
             }
         });
 

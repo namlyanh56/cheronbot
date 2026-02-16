@@ -25,11 +25,11 @@ class MovieCommand extends CommandBase {
         const { from } = context;
 
         if (!args[0]) {
-            return await this.reply(sock, from, msg, '🎬 Which movie?\n\nExample: .movie Interstellar');
+            return await this.reply(sock, from, msg, '🎬 *Film Apa?*\n\n📝 *Cara Pakai:*\n`.movie <judul film>`\n\n💡 *Contoh:*\n`.movie Interstellar`');
         }
 
         if (!config.apis.omdb.key) {
-            return await this.reply(sock, from, msg, '❌ OMDb API key not configured.\nGet one from: http://www.omdbapi.com/apikey.aspx');
+            return await this.reply(sock, from, msg, '❌ *API Key Tidak Dikonfigurasi*\n\n😔 OMDb API key belum diatur.\n💡 Dapatkan dari: http://www.omdbapi.com/apikey.aspx');
         }
 
         await this.react(sock, msg, '🎬');
@@ -55,7 +55,7 @@ class MovieCommand extends CommandBase {
             const { data } = await httpClient.get(url, { timeout: 10000 });
 
             if (data.Response === 'False') {
-                return await this.reply(sock, from, msg, `❌ Movie not found: "${query}"\n\nTry a different title or year.`);
+                return await this.reply(sock, from, msg, `❌ *Film Tidak Ditemukan*\n\n😔 Film "${query}" tidak ditemukan.\n💡 Coba judul atau tahun yang berbeda.`);
             }
 
             // Cache for 1 hour
@@ -65,7 +65,7 @@ class MovieCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Failed to fetch movie information.');
+            await this.reply(sock, from, msg, '❌ *Gagal Mengambil Data*\n\n😔 Maaf, tidak dapat mengambil informasi film.\n💡 Silakan coba lagi.');
         }
     }
 

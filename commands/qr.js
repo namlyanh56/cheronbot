@@ -22,7 +22,13 @@ class QRCommand extends CommandBase {
 
         if (!args[0]) {
             return await this.reply(sock, from, msg, 
-                '📱 *QR Code Generator*\n\nUsage: .qr <text or URL>\n\nExamples:\n• .qr https://google.com\n• .qr Hello World\n• .qr +1234567890');
+                '📱 *QR Code Generator*\n\n' +
+                '📝 *Cara Pakai:*\n' +
+                '`.qr <teks atau URL>`\n\n' +
+                '💡 *Contoh:*\n' +
+                '• `.qr https://google.com`\n' +
+                '• `.qr Hello World`\n' +
+                '• `.qr +1234567890`');
         }
 
         await this.react(sock, msg, '📱');
@@ -35,14 +41,14 @@ class QRCommand extends CommandBase {
 
             await sock.sendMessage(from, {
                 image: { url: qrUrl },
-                caption: `📱 *QR Code Generated*\n\nContent: ${text.substring(0, 100)}${text.length > 100 ? '...' : ''}`
+                caption: `📱 *QR Code Berhasil Dibuat!*\n\n✨ Konten: ${text.substring(0, 100)}${text.length > 100 ? '...' : ''}`
             }, { quoted: msg });
 
             await this.react(sock, msg, '✅');
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Failed to generate QR code.');
+            await this.reply(sock, from, msg, '❌ *Gagal Membuat QR Code*\n\n😔 Maaf, terjadi kesalahan saat membuat QR code.\n💡 Silakan coba lagi dalam beberapa saat.');
         }
     }
 }

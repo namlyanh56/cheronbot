@@ -80,8 +80,9 @@ class SayCommand extends CommandBase {
         // Cek API key
         if (!config.apis.elevenlabs.key) {
             return await this.reply(sock, from, msg, 
-                '❌ API ElevenLabs belum dikonfigurasi!\n\n' +
-                'Hubungi admin untuk mengaktifkan fitur TTS.');
+                '❌ *API Belum Dikonfigurasi*\n\n' +
+                '🔑 API ElevenLabs belum diatur.\n' +
+                '📧 Hubungi admin untuk mengaktifkan fitur Text-to-Speech.');
         }
 
         // Parse input
@@ -89,24 +90,17 @@ class SayCommand extends CommandBase {
 
         if (!text) {
             return await this.reply(sock, from, msg, 
-                '🎤 *Perintah Say (Text-to-Speech)*\n\n' +
+                '🎤 *Text-to-Speech AI*\n\n' +
                 '📝 *Cara Pakai:*\n' +
-                '• `.say halo semuanya` - Bicara dalam Bahasa Indonesia\n' +
-                '• `.say <en> hello everyone` - Bicara dalam Bahasa Inggris\n' +
-                '• `.say <ja> こんにちは` - Bicara dalam Bahasa Jepang\n\n' +
+                '• `.say halo semuanya` - Bahasa Indonesia\n' +
+                '• `.say <en> hello everyone` - Bahasa Inggris\n' +
+                '• `.say <ja> こんにちは` - Bahasa Jepang\n\n' +
                 '🌐 *Tag Bahasa:*\n' +
-                '`<id>` Indonesia (default)\n' +
-                '`<en>` English\n' +
-                '`<es>` Español\n' +
-                '`<ja>` 日本語\n' +
-                '`<ko>` 한국어\n' +
-                '`<zh>` 中文\n' +
-                '`<fr>` Français\n' +
-                '`<de>` Deutsch\n' +
-                '`<pt>` Português\n' +
-                '`<ru>` Русский\n' +
-                '`<ar>` العربية\n' +
-                '`<hi>` हिन्दी\n\n' +
+                '`<id>` Indonesia (default) | `<en>` English\n' +
+                '`<es>` Español | `<ja>` 日本語 | `<ko>` 한국어\n' +
+                '`<zh>` 中文 | `<fr>` Français | `<de>` Deutsch\n' +
+                '`<pt>` Português | `<ru>` Русский\n' +
+                '`<ar>` العربية | `<hi>` हिन्दी\n\n' +
                 '📋 *Catatan:*\n' +
                 '• Maksimal 500 karakter\n' +
                 '• Output sebagai voice note WhatsApp');
@@ -115,7 +109,7 @@ class SayCommand extends CommandBase {
         // Batas karakter
         if (text.length > 500) {
             return await this.reply(sock, from, msg, 
-                '❌ Teks terlalu panjang!\n\nMaksimal 500 karakter.');
+                '❌ *Teks Terlalu Panjang!*\n\n📏 Maksimal 500 karakter.\n💡 Saat ini: ' + text.length + ' karakter');
         }
 
         await this.react(sock, msg, '🎤');
@@ -159,13 +153,13 @@ class SayCommand extends CommandBase {
         } catch (error) {
             this.logError(error, context);
             
-            let errorMsg = '❌ Gagal menghasilkan suara.';
+            let errorMsg = '❌ *Gagal Menghasilkan Suara*\n\n😔 Maaf, terjadi kesalahan.\n💡 Silakan coba lagi.';
             if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-                errorMsg = '❌ API key ElevenLabs tidak valid!';
+                errorMsg = '❌ *API Key Tidak Valid*\n\n🔑 API key ElevenLabs tidak valid!\n📧 Hubungi admin untuk memperbaiki konfigurasi.';
             } else if (error.message.includes('429') || error.message.includes('quota')) {
-                errorMsg = '❌ Kuota API ElevenLabs habis. Coba lagi nanti!';
+                errorMsg = '❌ *Kuota API Habis*\n\n⏰ Kuota API ElevenLabs sudah habis.\n💡 Coba lagi nanti ya!';
             } else if (error.message.includes('timeout')) {
-                errorMsg = '❌ Server ElevenLabs tidak merespon. Coba lagi!';
+                errorMsg = '❌ *Server Tidak Merespon*\n\n⏱️ Server ElevenLabs tidak merespon.\n💡 Coba lagi dalam beberapa saat!';
             }
             
             await this.reply(sock, from, msg, errorMsg);

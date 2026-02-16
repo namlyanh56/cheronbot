@@ -50,7 +50,7 @@ class MemeCommand extends CommandBase {
 
                 await sock.sendMessage(from, {
                     image: { url: meme.url },
-                    caption: `😂 *${meme.title}*\n\n👤 By: u/${meme.author}\n⬆️ ${meme.ups} upvotes\n\n_Dari r/${meme.subreddit}_`
+                    caption: `😂 *${meme.title}*\n\n👤 *Oleh:* u/${meme.author}\n⬆️ ${meme.ups} upvotes\n\n_Dari r/${meme.subreddit}_`
                 }, { quoted: msg });
 
                 await this.react(sock, msg, '✅');
@@ -105,10 +105,9 @@ class MemeCommand extends CommandBase {
                 const limitParam = category === 'top' ? '&t=week&limit=100' : '&limit=100';
                 const { data } = await httpClient.get(
                     `https://www.reddit.com/r/${this.subreddit}/${category}.json?raw_json=1${limitParam}`,
-                    { 
-                        timeout: 15000,
+                    { timeout: 15000,
                         headers: {
-                            'User-Agent': 'HamBot/2.0 (WhatsApp Bot)'
+                            'User-Agent': 'Cheron Bot Asisten/2.0 (WhatsApp Bot)'
                         }
                     }
                 );
@@ -223,22 +222,22 @@ class MemeCommand extends CommandBase {
         const fallbackMemes = [
             {
                 text: "😂 *Meme Indonesia*\n\n" +
-                      "Ketika WiFi lemot tapi quota masih banyak:\n" +
+                      "Ketika WiFi lemot tapi kuota masih banyak:\n" +
                       "🐢 \"Sabar ya, internet lagi healing...\"\n\n" +
-                      "_Meme lokal HamBot_"
+                      "_Meme lokal Cheron Bot Asisten_"
             },
             {
                 text: "😂 *Meme Indonesia*\n\n" +
                       "Bos: \"Kamu bisa lembur hari ini?\"\n" +
                       "Karyawan: \"Bisa, tapi besok saya izin sakit ya.\"\n\n" +
-                      "_Meme lokal HamBot_"
+                      "_Meme lokal Cheron Bot Asisten_"
             },
             {
                 text: "😂 *Meme Indonesia*\n\n" +
                       "Ibu-ibu di grup WA:\n" +
                       "\"Selamat pagi, semoga hari ini penuh berkah 🌸🌺🌷\"\n" +
                       "*attachment: gambar bunga 240p*\n\n" +
-                      "_Meme lokal HamBot_"
+                      "_Meme lokal Cheron Bot Asisten_"
             },
             {
                 text: "😂 *Meme Indonesia*\n\n" +
@@ -246,7 +245,7 @@ class MemeCommand extends CommandBase {
                       "\"Kode error? Coba restart.\"\n" +
                       "\"Masih error? Copy dari StackOverflow.\"\n" +
                       "\"Masih error juga? Pasrah.\"\n\n" +
-                      "_Meme lokal HamBot_"
+                      "_Meme lokal Cheron Bot Asisten_"
             },
             {
                 text: "😂 *Meme Indonesia*\n\n" +
@@ -254,25 +253,25 @@ class MemeCommand extends CommandBase {
                       "\"Udah makan belum?\"\n" +
                       "Padahal baru aja ketemu:\n" +
                       "\"Sudah, tadi makan [insert makanan].\"\n\n" +
-                      "_Meme lokal HamBot_"
+                      "_Meme lokal Cheron Bot Asisten_"
             },
             {
                 text: "😂 *Meme Indonesia*\n\n" +
                       "Playlist Spotify: Lo-fi Hip Hop\n" +
                       "Realita: Dangdut koplo di angkot 🚐🎶\n\n" +
-                      "_Meme lokal HamBot_"
+                      "_Meme lokal Cheron Bot Asisten_"
             },
             {
                 text: "😂 *Meme Indonesia*\n\n" +
                       "Ekspektasi: Meeting 30 menit\n" +
                       "Realita: 2 jam bahas hal yang bisa di-email 📧\n\n" +
-                      "_Meme lokal HamBot_"
+                      "_Meme lokal Cheron Bot Asisten_"
             },
             {
                 text: "😂 *Meme Indonesia*\n\n" +
                       "Tukang parkir: *tepuk tangan sekali*\n" +
                       "Aku: Terima kasih pak, hidupku terselamatkan 🙏\n\n" +
-                      "_Meme lokal HamBot_"
+                      "_Meme lokal Cheron Bot Asisten_"
             }
         ];
 

@@ -52,9 +52,9 @@ class WikiCommand extends CommandBase {
             this.logError(error, context);
             
             if (error.response?.status === 404) {
-                await this.reply(sock, from, msg, `❌ No Wikipedia article found for "${query}".`);
+                await this.reply(sock, from, msg, `❌ *Artikel Tidak Ditemukan*\n\n😔 Tidak ada artikel Wikipedia untuk "${query}".\n💡 Coba kata kunci lain.`);
             } else {
-                await this.reply(sock, from, msg, '❌ Failed to fetch Wikipedia data.');
+                await this.reply(sock, from, msg, '❌ *Gagal Mengambil Data*\n\n😔 Maaf, gagal mengambil data Wikipedia.\n💡 Silakan coba lagi.');
             }
         }
     }

@@ -50,9 +50,9 @@ class CryptoCommand extends CommandBase {
             
             if (error.response?.status === 404) {
                 await this.reply(sock, from, msg, 
-                    `❌ Cryptocurrency "${symbol}" not found.\n\nTry: bitcoin, ethereum, dogecoin, etc.`);
+                    `❌ *Crypto Tidak Ditemukan*\n\n😔 Cryptocurrency "${symbol}" tidak ditemukan.\n\n💡 Coba: bitcoin, ethereum, dogecoin, dll.`);
             } else {
-                await this.reply(sock, from, msg, '❌ Failed to fetch crypto data.');
+                await this.reply(sock, from, msg, '❌ *Gagal Mengambil Data*\n\n😔 Maaf, terjadi kesalahan saat mengambil data crypto.\n💡 Silakan coba lagi.');
             }
         }
     }

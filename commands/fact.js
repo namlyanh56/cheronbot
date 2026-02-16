@@ -40,7 +40,7 @@ ${randomFact}
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Gagal menampilkan fakta.');
+            await this.reply(sock, from, msg, '❌ *Gagal Menampilkan Fakta*\n\n😔 Maaf, terjadi kesalahan.\n💡 Silakan coba lagi.');
         }
     }
 

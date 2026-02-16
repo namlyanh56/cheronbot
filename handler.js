@@ -117,6 +117,27 @@ module.exports = async (sock, m) => {
         // Get command from registry
         command = commandRegistry.get(commandName);
         
+        // ============================================================
+        // DEBUG_OWNER_CHECK — Log sementara untuk diagnosa owner detection
+        // HAPUS BLOK INI SETELAH VERIFIKASI BERHASIL!
+        // ============================================================
+        logger.info('DEBUG_OWNER_CHECK', {
+            sender,
+            from,
+            isGroup,
+            isOwner: config.isOwner(sender),
+            ownerIds: config.getOwnerIds(),
+            senderDigits: sender.replace(/\D/g, ''),
+            ownerDigits: config.getOwnerIds().map(x => x.replace(/\D/g, '')),
+            senderSuffix: sender.includes('@') ? sender.split('@')[1] : 'no-suffix',
+            senderStripped: sender.includes(':') && sender.includes('@')
+                ? sender.split(':')[0] + '@' + sender.split('@')[1]
+                : sender
+        });
+        // ============================================================
+        // END DEBUG — HAPUS SAMPAI SINI
+        // ============================================================
+
         // ACCESS CONTROL: Check if user is allowed to use commands
         // Owner always has access, other users need explicit allowlist
         if (!security.isUserAllowed(sender)) {

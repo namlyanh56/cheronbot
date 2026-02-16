@@ -28,7 +28,7 @@ function assert(condition, testName) {
 // Test 1: Configuration
 try {
     config.validate();
-    assert(config.bot.name === 'HamBot', 'Config: Bot name loaded');
+    assert(config.bot.name === 'Cheron Bot Asisten', 'Config: Bot name loaded');
     assert(config.performance.maxProcesses >= 1, 'Config: Max processes valid');
     assert(config.bot.prefix === '.', 'Config: Prefix loaded');
 } catch (error) {

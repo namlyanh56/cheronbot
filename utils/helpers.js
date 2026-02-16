@@ -6,8 +6,41 @@
 const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const { spawn } = require('child_process');
 const fsPromises = require('fs').promises;
+const os = require('os');
+const path = require('path');
 const httpClient = require('./http-client');
 const security = require('./security');
+
+// --- LAZY REQUIRE CACHE FOR HEAVY DEPENDENCIES ---
+const lazyRequireCache = {};
+
+/**
+ * Lazy require for heavy dependencies with env toggle
+ * @param {string} moduleName - Name of module (puppeteer, sharp, canvas)
+ * @param {string} envVar - Environment variable to check (ENABLE_PUPPETEER, ENABLE_SHARP, ENABLE_CANVAS)
+ * @returns {Object|null} Module or null if disabled
+ */
+function lazyRequire(moduleName, envVar) {
+    // Check if disabled via env
+    if (process.env[envVar] === 'false') {
+        return null;
+    }
+    
+    // Return cached module if already loaded
+    if (lazyRequireCache[moduleName]) {
+        return lazyRequireCache[moduleName];
+    }
+    
+    // Try to load the module
+    try {
+        const module = require(moduleName);
+        lazyRequireCache[moduleName] = module;
+        return module;
+    } catch (error) {
+        console.warn(`[LazyRequire] Failed to load ${moduleName}: ${error.message}`);
+        return null;
+    }
+}
 
 // --- HELPER FUNCTIONS ---
 
@@ -146,7 +179,7 @@ function sanitizeInput(input, maxLength = 500) {
 }
 
 /**
- * Generate unique filename
+ * Generate unique filename (without path)
  */
 function generateFilename(prefix = 'file', extension = '') {
     const timestamp = Date.now();
@@ -155,15 +188,106 @@ function generateFilename(prefix = 'file', extension = '') {
 }
 
 /**
- * Clean up temporary files
+ * Create temporary file path in OS temp directory
+ * @param {string} prefix - File prefix
+ * @param {string} extension - File extension (without dot)
+ * @returns {string} Full path to temp file
+ */
+function createTempFile(prefix = 'file', extension = '') {
+    const filename = generateFilename(prefix, extension);
+    return path.join(os.tmpdir(), filename);
+}
+
+/**
+ * Clean up temporary files by prefix (searches in current dir and OS temp dir)
  */
 async function cleanupFiles(prefix) {
     try {
-        const files = await fsPromises.readdir('./');
-        const junk = files.filter(x => x.startsWith(prefix));
-        await Promise.all(junk.map(j => fsPromises.unlink(j).catch(() => {})));
-        return junk.length;
+        let count = 0;
+        
+        // Clean from current directory (legacy support)
+        try {
+            const files = await fsPromises.readdir('./');
+            const junk = files.filter(x => x.startsWith(prefix));
+            await Promise.all(junk.map(j => fsPromises.unlink(j).catch(() => {})));
+            count += junk.length;
+        } catch (e) {
+            // Ignore errors
+        }
+        
+        // Clean from OS temp directory
+        try {
+            const tempFiles = await fsPromises.readdir(os.tmpdir());
+            const tempJunk = tempFiles.filter(x => x.startsWith(prefix));
+            await Promise.all(tempJunk.map(j => 
+                fsPromises.unlink(path.join(os.tmpdir(), j)).catch(() => {})
+            ));
+            count += tempJunk.length;
+        } catch (e) {
+            // Ignore errors
+        }
+        
+        return count;
     } catch (e) {
+        return 0;
+    }
+}
+
+/**
+ * Safe file cleanup - delete a single file
+ * @param {string} filePath - Path to file to delete
+ * @returns {Promise<boolean>} True if deleted, false otherwise
+ */
+async function cleanupFile(filePath) {
+    try {
+        if (!filePath) return false;
+        await fsPromises.unlink(filePath);
+        return true;
+    } catch (e) {
+        // File might not exist or permission denied, ignore
+        return false;
+    }
+}
+
+/**
+ * Periodic cleanup of old temp files (30+ minutes old)
+ * @param {string[]} prefixes - Array of prefixes to clean (e.g., ['music_', 'video_', 'sticker_'])
+ */
+async function periodicTempCleanup(prefixes = []) {
+    try {
+        const tempDir = os.tmpdir();
+        const files = await fsPromises.readdir(tempDir);
+        const now = Date.now();
+        const maxAge = 30 * 60 * 1000; // 30 minutes
+        
+        let cleaned = 0;
+        
+        for (const file of files) {
+            // Check if file matches any prefix
+            const matchesPrefix = prefixes.length === 0 || prefixes.some(prefix => file.startsWith(prefix));
+            if (!matchesPrefix) continue;
+            
+            try {
+                const filePath = path.join(tempDir, file);
+                const stats = await fsPromises.stat(filePath);
+                const age = now - stats.mtimeMs;
+                
+                if (age > maxAge) {
+                    await fsPromises.unlink(filePath);
+                    cleaned++;
+                }
+            } catch (e) {
+                // Skip files we can't access
+            }
+        }
+        
+        if (cleaned > 0) {
+            console.log(`[TempCleanup] Cleaned ${cleaned} old temp files`);
+        }
+        
+        return cleaned;
+    } catch (e) {
+        // Ignore errors in cleanup
         return 0;
     }
 }
@@ -186,6 +310,10 @@ module.exports = {
     getValidPosterUrl,
     sanitizeInput,
     generateFilename,
+    createTempFile,
     cleanupFiles,
-    isValidUrl
+    cleanupFile,
+    periodicTempCleanup,
+    isValidUrl,
+    lazyRequire
 };

@@ -48,6 +48,84 @@ Bot WhatsApp canggih yang dibangun dengan Baileys, dilengkapi dengan fitur downl
 - **Browser Pooling** - Reuse browser instance untuk scraping
 - **Memory Optimization** - Cleanup dan garbage collection otomatis
 
+## 📦 Installation & Setup
+
+### Prerequisites
+- Node.js 16 or higher
+- npm or yarn
+
+### Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Bot Configuration
+BOT_NAME=HamBot
+BOT_OWNER=Ilham
+BOT_PREFIX=.
+BOT_OWNER_ID=your_phone_number@s.whatsapp.net
+
+# Feature Toggles (optional - defaults to true)
+# Set to 'false' to disable heavy dependencies and reduce memory usage
+ENABLE_PUPPETEER=true    # Required for Pinterest command
+ENABLE_CANVAS=true       # Required for Brat sticker generator
+ENABLE_SHARP=true        # Required for Sticker and Brat commands
+
+# API Keys (optional - for specific features)
+ELEVENLABS_API_KEY=your_elevenlabs_key  # For TTS command
+OMDB_API_KEY=your_omdb_key              # For movie info command
+GEMINI_API_KEY=your_gemini_key          # For AI features
+
+# Proxy Settings (optional)
+PROXY_ENABLED=false
+PROXY_TYPE=http
+PROXY_HOST=
+PROXY_PORT=
+PROXY_USER=
+PROXY_PASS=
+
+# Performance Settings (optional)
+MAX_PROCESSES=3
+COOLDOWN_MS=3000
+RATE_LIMIT_WINDOW=60000
+RATE_LIMIT_MAX=15
+
+# Security Settings (optional)
+SECURITY_CHAT_FILTER=true
+```
+
+### Feature Toggles Explained
+
+The bot now supports disabling heavy dependencies to reduce memory usage and deployment size:
+
+- **ENABLE_PUPPETEER**: Controls browser automation (Pinterest search)
+  - When disabled: Pinterest command shows a friendly "feature not available" message
+  - Memory savings: ~200MB
+
+- **ENABLE_CANVAS**: Controls canvas rendering (Brat sticker generator)
+  - When disabled: Brat command shows a friendly "feature not available" message
+  - Memory savings: ~50MB
+
+- **ENABLE_SHARP**: Controls image processing (Sticker creation, Brat filters)
+  - When disabled: Sticker and Brat commands show a friendly "feature not available" message
+  - Memory savings: ~30MB
+
+All features are enabled by default for backward compatibility. To disable a feature, explicitly set its toggle to `false`.
+
+### Temp File Management
+
+The bot now uses OS temp directory for media files with automatic cleanup:
+
+- **Automatic cleanup**: Media files are cleaned up immediately after sending
+- **Periodic cleanup**: Old temp files (30+ minutes) are cleaned every 30 minutes
+- **Graceful error handling**: Cleanup happens even if sending fails (finally blocks)
+- **OS temp dir**: Uses system temp directory instead of current directory
+
+This ensures:
+- No leftover files cluttering the deployment
+- Efficient disk space usage
+- Better handling on disk-limited environments
+
 ## 📋 Daftar Perintah
 
 ### Umum

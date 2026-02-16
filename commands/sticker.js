@@ -4,7 +4,7 @@
  */
 
 const CommandBase = require('./base');
-const sharp = require('sharp');
+const { lazyRequire } = require('../utils/helpers');
 const { downloadMedia } = require('../utils/helpers');
 
 class StickerCommand extends CommandBase {
@@ -19,10 +19,31 @@ class StickerCommand extends CommandBase {
             isHeavy: false,
             requiresMedia: true
         });
+        
+        // Lazy load sharp
+        this.sharp = null;
+        this._initDependencies();
+    }
+    
+    /**
+     * Initialize dependencies with lazy loading
+     */
+    _initDependencies() {
+        this.sharp = lazyRequire('sharp', 'ENABLE_SHARP');
     }
 
     async execute(sock, msg, args, context) {
         const { from } = context;
+        
+        // Check if sharp is available
+        if (!this.sharp) {
+            return await this.reply(sock, from, msg,
+                '❌ Feature not available!\n\n' +
+                'The sticker command requires Sharp library.\n' +
+                'This dependency is currently disabled via environment configuration.\n\n' +
+                'Contact admin to enable: ENABLE_SHARP=true'
+            );
+        }
 
         await this.react(sock, msg, '⏳');
 
@@ -40,7 +61,7 @@ class StickerCommand extends CommandBase {
             const buffer = await downloadMedia(imageMessage, 'image');
 
             // Convert to sticker format
-            const stickerBuffer = await sharp(buffer)
+            const stickerBuffer = await this.sharp(buffer)
                 .resize(512, 512, {
                     fit: 'contain',
                     background: { r: 0, g: 0, b: 0, alpha: 0 }

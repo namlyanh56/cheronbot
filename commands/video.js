@@ -6,9 +6,10 @@
 
 const CommandBase = require('./base');
 const { spawn } = require('child_process');
-const { generateFilename, cleanupFiles, isValidUrl } = require('../utils/helpers');
+const { createTempFile, cleanupFiles, isValidUrl } = require('../utils/helpers');
 const { identifyPlatform, isVideoSupported, getPlatformArgs, getSupportedPlatformsText } = require('../utils/url-parser');
 const fsPromises = require('fs').promises;
+const path = require('path');
 const config = require('../config');
 
 // Video format selector: prefer mp4, fallback to best available
@@ -92,7 +93,10 @@ class VideoCommand extends CommandBase {
 
         await this.react(sock, msg, '⏳');
 
-        const filePrefix = generateFilename('video', '');
+        const tempFile = createTempFile('video', 'mp4');
+        const tempDir = path.dirname(tempFile);
+        const tempBase = path.basename(tempFile, '.mp4');
+        const filePrefix = path.join(tempDir, tempBase);
         
         // Build proxy args from config - uses getYtDlpProxyArgs method
         const proxyArgs = config.getYtDlpProxyArgs();
@@ -154,15 +158,15 @@ class VideoCommand extends CommandBase {
 
             await this.spawnYtDlp(downloadArgs);
 
-            // Find downloaded file
-            const files = await fsPromises.readdir('./');
+            // Find downloaded file in temp directory
+            const files = await fsPromises.readdir(tempDir);
             const videoFile = files.find(x => 
-                x.startsWith(filePrefix) && (x.endsWith('.mp4') || x.endsWith('.mkv') || x.endsWith('.webm'))
+                x.startsWith(tempBase) && (x.endsWith('.mp4') || x.endsWith('.mkv') || x.endsWith('.webm'))
             );
 
             if (!videoFile) {
                 // Check if file was too large
-                const anyFile = files.find(x => x.startsWith(filePrefix));
+                const anyFile = files.find(x => x.startsWith(tempBase));
                 if (!anyFile) {
                     throw new Error('File too large or download failed');
                 }
@@ -170,14 +174,15 @@ class VideoCommand extends CommandBase {
             }
 
             // Check file size before sending
-            const stats = await fsPromises.stat(videoFile);
+            const videoPath = path.join(tempDir, videoFile);
+            const stats = await fsPromises.stat(videoPath);
             if (stats.size > 200 * 1024 * 1024) { // 200MB
-                await cleanupFiles(filePrefix);
+                await cleanupFiles(tempBase);
                 return await this.reply(sock, from, msg, '📦 Waduh, filenya kegedean bro (>200MB)! Coba video yang lebih pendek ya 😅');
             }
 
             // Send video
-            const videoBuffer = await fsPromises.readFile(videoFile);
+            const videoBuffer = await fsPromises.readFile(videoPath);
             await sock.sendMessage(from, {
                 video: videoBuffer,
                 mimetype: 'video/mp4',
@@ -208,7 +213,7 @@ class VideoCommand extends CommandBase {
             await this.reply(sock, from, msg, errorMsg);
         } finally {
             // Cleanup temporary files immediately
-            await cleanupFiles(filePrefix);
+            await cleanupFiles(tempBase);
         }
     }
 }

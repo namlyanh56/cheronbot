@@ -4,12 +4,9 @@
  * Supports proxy configuration for Tailscale + Every Proxy
  */
 
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const { lazyRequire } = require('./helpers');
 const logger = require('./logger');
 const config = require('../config');
-
-puppeteer.use(StealthPlugin());
 
 class BrowserManager {
     constructor() {
@@ -18,12 +15,39 @@ class BrowserManager {
         this.maxPages = 5;
         this.isLaunching = false;
         this.healthCheckInterval = null;
+        
+        // Lazy load puppeteer dependencies
+        this.puppeteer = null;
+        this.StealthPlugin = null;
+        this._initDependencies();
+    }
+    
+    /**
+     * Initialize dependencies with lazy loading
+     */
+    _initDependencies() {
+        this.puppeteer = lazyRequire('puppeteer-extra', 'ENABLE_PUPPETEER');
+        
+        if (this.puppeteer) {
+            // Only load stealth plugin if puppeteer is available
+            try {
+                this.StealthPlugin = require('puppeteer-extra-plugin-stealth');
+                this.puppeteer.use(this.StealthPlugin());
+            } catch (e) {
+                logger.warn('Puppeteer stealth plugin not available');
+            }
+        }
     }
 
     /**
      * Get or create browser instance
      */
     async getBrowser() {
+        // Check if puppeteer is available
+        if (!this.puppeteer) {
+            throw new Error('Puppeteer is not available. Enable via ENABLE_PUPPETEER=true');
+        }
+        
         // If browser exists and is connected, return it
         if (this.browser && this.browser.isConnected()) {
             return this.browser;
@@ -54,6 +78,10 @@ class BrowserManager {
      * Includes proxy configuration if enabled
      */
     async launch() {
+        if (!this.puppeteer) {
+            throw new Error('Puppeteer is not available. Enable via ENABLE_PUPPETEER=true');
+        }
+        
         this.isLaunching = true;
 
         try {
@@ -78,7 +106,7 @@ class BrowserManager {
                 logger.info(`Browser using proxy: ${config.getProxyUrl()}`);
             }
             
-            this.browser = await puppeteer.launch({
+            this.browser = await this.puppeteer.launch({
                 headless: "new",
                 args: launchArgs
             });

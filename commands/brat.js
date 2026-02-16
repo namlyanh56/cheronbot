@@ -5,8 +5,7 @@
  */
 
 const CommandBase = require('./base');
-const { createCanvas, registerFont } = require('canvas');
-const sharp = require('sharp');
+const { lazyRequire } = require('../utils/helpers');
 const path = require('path');
 const fs = require('fs');
 
@@ -26,9 +25,26 @@ class BratCommand extends CommandBase {
         this.padding = 30;
         this.fontFamily = 'Arial Narrow';
         this.fontRegistered = false;
+        
+        // Lazy load dependencies
+        this.canvas = null;
+        this.sharp = null;
 
-        // Register custom font if available
-        this._registerFont();
+        // Try to register font (will only work if canvas is available)
+        this._initDependencies();
+    }
+    
+    /**
+     * Initialize dependencies with lazy loading
+     */
+    _initDependencies() {
+        this.canvas = lazyRequire('canvas', 'ENABLE_CANVAS');
+        this.sharp = lazyRequire('sharp', 'ENABLE_SHARP');
+        
+        // Register font if canvas is available
+        if (this.canvas) {
+            this._registerFont();
+        }
     }
 
     /**
@@ -36,6 +52,8 @@ class BratCommand extends CommandBase {
      * Falls back to system fonts if not found
      */
     _registerFont() {
+        if (!this.canvas) return;
+        
         const fontPaths = [
             path.join(process.cwd(), 'fonts', 'arialnarrow.ttf'),
             path.join(process.cwd(), 'fonts', 'ArialNarrow.ttf'),
@@ -46,7 +64,7 @@ class BratCommand extends CommandBase {
         for (const fontPath of fontPaths) {
             try {
                 if (fs.existsSync(fontPath)) {
-                    registerFont(fontPath, { family: 'BratFont', weight: 'bold' });
+                    this.canvas.registerFont(fontPath, { family: 'BratFont', weight: 'bold' });
                     this.fontFamily = 'BratFont';
                     this.fontRegistered = true;
                     return;
@@ -71,6 +89,16 @@ class BratCommand extends CommandBase {
      */
     async execute(sock, msg, args, context) {
         const { from } = context;
+        
+        // Check if dependencies are available
+        if (!this.canvas || !this.sharp) {
+            return await this.reply(sock, from, msg,
+                '❌ Feature not available!\n\n' +
+                'The brat command requires Canvas and Sharp libraries.\n' +
+                'These dependencies are currently disabled via environment configuration.\n\n' +
+                'Contact admin to enable: ENABLE_CANVAS=true, ENABLE_SHARP=true'
+            );
+        }
 
         // Preserve all whitespace by joining with single space
         // Args are already split by handler, so we rejoin them

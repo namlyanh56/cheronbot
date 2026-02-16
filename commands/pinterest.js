@@ -43,7 +43,20 @@ class PinterestCommand extends CommandBase {
             
             if (!allScrapedUrls || !Array.isArray(allScrapedUrls) || allScrapedUrls.length === 0) {
                 // Need to scrape fresh images
-                page = await browserManager.newPage();
+                try {
+                    page = await browserManager.newPage();
+                } catch (error) {
+                    if (error.message.includes('Puppeteer is not available')) {
+                        return await this.reply(sock, from, msg,
+                            '❌ Feature not available!\n\n' +
+                            'Pinterest search requires Puppeteer library.\n' +
+                            'This dependency is currently disabled via environment configuration.\n\n' +
+                            'Contact admin to enable: ENABLE_PUPPETEER=true'
+                        );
+                    }
+                    throw error;
+                }
+                
                 await page.setUserAgent(getRandomUA());
 
                 const targetUrl = `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(query)}`;

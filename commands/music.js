@@ -7,9 +7,10 @@
 
 const CommandBase = require('./base');
 const { spawn } = require('child_process');
-const { generateFilename, cleanupFiles, isValidUrl } = require('../utils/helpers');
+const { createTempFile, cleanupFiles, isValidUrl } = require('../utils/helpers');
 const { identifyPlatform, isAudioSupported, getPlatformArgs, getSupportedPlatformsText } = require('../utils/url-parser');
 const fsPromises = require('fs').promises;
+const path = require('path');
 const config = require('../config');
 
 class MusicCommand extends CommandBase {
@@ -69,7 +70,10 @@ class MusicCommand extends CommandBase {
         await this.react(sock, msg, '🔍');
 
         const query = args.join(' ');
-        const filePrefix = generateFilename('music', '');
+        const tempFile = createTempFile('music', 'mp3');
+        const tempDir = path.dirname(tempFile);
+        const tempBase = path.basename(tempFile, '.mp3');
+        const filePrefix = path.join(tempDir, tempBase);
         
         // Build proxy args from config - uses getYtDlpProxyArgs method
         const proxyArgs = config.getYtDlpProxyArgs();
@@ -175,15 +179,15 @@ class MusicCommand extends CommandBase {
 
             await this.spawnYtDlp(downloadArgs);
 
-            // Find downloaded file
-            const files = await fsPromises.readdir('./');
+            // Find downloaded file in temp directory
+            const files = await fsPromises.readdir(tempDir);
             const audioFile = files.find(x => 
-                x.startsWith(filePrefix) && x.endsWith('.mp3')
+                x.startsWith(tempBase) && x.endsWith('.mp3')
             );
 
             if (!audioFile) {
                 // Check if file was too large
-                const anyFile = files.find(x => x.startsWith(filePrefix));
+                const anyFile = files.find(x => x.startsWith(tempBase));
                 if (!anyFile) {
                     throw new Error('Downloaded file not found. The file might be too large (>200MB). Try a shorter song! 📦');
                 }
@@ -191,14 +195,15 @@ class MusicCommand extends CommandBase {
             }
 
             // Check file size before sending
-            const stats = await fsPromises.stat(audioFile);
+            const audioPath = path.join(tempDir, audioFile);
+            const stats = await fsPromises.stat(audioPath);
             if (stats.size > 200 * 1024 * 1024) { // 200MB
-                await cleanupFiles(filePrefix);
+                await cleanupFiles(tempBase);
                 return await this.reply(sock, from, msg, '📦 Waduh, filenya kegedean bro (>200MB)! Coba lagu yang lebih pendek ya 😅');
             }
 
             // Send audio
-            const audioBuffer = await fsPromises.readFile(audioFile);
+            const audioBuffer = await fsPromises.readFile(audioPath);
             await sock.sendMessage(from, {
                 audio: audioBuffer,
                 mimetype: 'audio/mpeg'
@@ -226,7 +231,7 @@ class MusicCommand extends CommandBase {
             await this.reply(sock, from, msg, errorMsg);
         } finally {
             // Cleanup temporary files immediately
-            await cleanupFiles(filePrefix);
+            await cleanupFiles(tempBase);
         }
     }
 }

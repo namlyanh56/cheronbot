@@ -4,7 +4,7 @@
  */
 
 const CommandBase = require('./base');
-const { downloadMedia, generateFilename } = require('../utils/helpers');
+const { downloadMedia, createTempFile, cleanupFile } = require('../utils/helpers');
 const { spawnPromise } = require('../utils/helpers');
 const fsPromises = require('fs').promises;
 
@@ -32,8 +32,8 @@ class ToImgCommand extends CommandBase {
 
         await this.react(sock, msg, '🖼️');
 
-        const webpFile = generateFilename('sticker', 'webp');
-        const pngFile = generateFilename('sticker', 'png');
+        const webpFile = createTempFile('sticker', 'webp');
+        const pngFile = createTempFile('sticker', 'png');
 
         try {
             // Download sticker
@@ -63,8 +63,8 @@ class ToImgCommand extends CommandBase {
             await this.reply(sock, from, msg, '❌ Failed to convert sticker. Make sure FFmpeg is installed.');
         } finally {
             // Cleanup
-            await fsPromises.unlink(webpFile).catch(() => {});
-            await fsPromises.unlink(pngFile).catch(() => {});
+            await cleanupFile(webpFile);
+            await cleanupFile(pngFile);
         }
     }
 }

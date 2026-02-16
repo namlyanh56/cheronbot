@@ -20,7 +20,10 @@ class Config {
             // Legacy single ID for backward compatibility
             ownerId: this._normalizeOwnerId(process.env.BOT_OWNER_ID),
             // Owner-only commands list from env
-            ownerOnlyCommands: (process.env.OWNER_ONLY_COMMANDS || 'security,spam').split(',').map(c => c.trim().toLowerCase()).filter(c => c)
+            ownerOnlyCommands: (process.env.OWNER_ONLY_COMMANDS || 'security,spam')
+                .split(',')
+                .map(c => c.trim().toLowerCase())
+                .filter(c => c)
         };
 
         this.performance = {
@@ -42,12 +45,8 @@ class Config {
                 key: process.env.ELEVENLABS_API_KEY,
                 voiceId: process.env.ELEVENLABS_VOICE_ID || 'plgKUYgnlZ1DCNh54DwJ'
             },
-            omdb: {
-                key: process.env.OMDB_API_KEY
-            },
-            gemini: {
-                key: process.env.GEMINI_API_KEY
-            }
+            omdb: { key: process.env.OMDB_API_KEY },
+            gemini: { key: process.env.GEMINI_API_KEY }
         };
 
         this.logging = {
@@ -144,12 +143,10 @@ class Config {
 
     /**
      * Get proxy URL for yt-dlp and other CLI tools
-     * Priority: proxy.url (from PROXY_* env vars) > media.proxyUrl (from HB_PROXY_URL legacy)
+     * Priority: proxy.url (from PROXY_* env vars) > media.proxyUrl (from legacy HB_PROXY_URL)
      */
     getProxyUrl() {
-        if (!this.proxy.enabled) {
-            return null;
-        }
+        if (!this.proxy.enabled) return null;
         // Primary: Use proxy.url built from PROXY_* env vars
         // Fallback: Use media.proxyUrl from legacy HB_PROXY_URL for backward compatibility
         return this.proxy.url || this.media.proxyUrl;
@@ -182,8 +179,6 @@ class Config {
      */
     _normalizeOwnerId(ownerId) {
         if (!ownerId) return null;
-        
-        // If comma-separated, return the first one
         const firstId = ownerId.split(',')[0];
         return this._normalizeSingleOwnerId(firstId);
     }
@@ -196,7 +191,6 @@ class Config {
      */
     _normalizeOwnerIds(ownerIdStr) {
         if (!ownerIdStr) return [];
-        
         return ownerIdStr
             .split(',')
             .map(id => this._normalizeSingleOwnerId(id.trim()))
@@ -210,19 +204,14 @@ class Config {
      */
     _normalizeSingleOwnerId(ownerId) {
         if (!ownerId) return null;
-        
-        // Remove any whitespace
         let normalized = ownerId.trim();
-        
         // Accept both @s.whatsapp.net and @lid formats directly
         if (normalized.endsWith('@s.whatsapp.net') || normalized.endsWith('@lid')) {
             return normalized;
         }
-        
         // Otherwise, assume it's a phone number - normalize and add @s.whatsapp.net suffix
         const number = normalized.replace(/\D/g, '');
         if (!number) return null;
-        
         return `${number}@s.whatsapp.net`;
     }
 
@@ -234,57 +223,59 @@ class Config {
      */
     isOwner(senderId) {
         if (!senderId) return false;
-        
-        // Check against all owner IDs
         const ownerIds = this.bot.ownerIds;
         if (!ownerIds || ownerIds.length === 0) return false;
-        
+
         for (const ownerId of ownerIds) {
             if (this._matchesOwnerId(senderId, ownerId)) {
                 return true;
             }
         }
-        
         return false;
     }
 
     /**
-     * Check if sender matches a specific owner ID
+     * Check if sender matches a specific owner ID (resilient to suffix/device variations)
      * @param {string} senderId - Sender JID
      * @param {string} ownerId - Owner ID to check against
      * @returns {boolean}
      */
     _matchesOwnerId(senderId, ownerId) {
         if (!ownerId || !senderId) return false;
-        
-        // Direct match (works for both @lid and @s.whatsapp.net)
-        if (senderId === ownerId) {
+
+        // Exact match
+        if (senderId === ownerId) return true;
+
+        // Fallback: compare digit-only (handles @lid, @s.whatsapp.net, device suffix like :1@)
+        const senderDigits = senderId.replace(/\D/g, '');
+        const ownerDigits = ownerId.replace(/\D/g, '');
+        if (senderDigits && ownerDigits && senderDigits === ownerDigits) {
             return true;
         }
-        
-        // If owner uses @s.whatsapp.net format, try to normalize sender
+
+        // Existing normalization for @s.whatsapp.net owners
         if (ownerId.endsWith('@s.whatsapp.net')) {
             let normalizedSender = senderId;
-            
-            // If sender uses @lid format, cannot match with @s.whatsapp.net
+
+            // If sender uses @lid format, attempt digit match already handled above
             if (senderId.endsWith('@lid')) {
                 return false;
             }
-            
-            // If sender is in participant format (group), extract JID
+
+            // Participant format from group (e.g., "user:device@server")
             if (senderId.includes(':')) {
                 normalizedSender = senderId.split(':')[0] + '@s.whatsapp.net';
             }
-            
+
             // Ensure @s.whatsapp.net suffix
             if (!normalizedSender.endsWith('@s.whatsapp.net')) {
                 const number = normalizedSender.replace(/\D/g, '');
                 normalizedSender = `${number}@s.whatsapp.net`;
             }
-            
+
             return normalizedSender === ownerId;
         }
-        
+
         return false;
     }
 
@@ -317,7 +308,6 @@ class Config {
         }
 
         if (!this.bot.ownerIds || this.bot.ownerIds.length === 0) {
-            // Note: Using console.warn here instead of logger to avoid circular dependency
             console.warn('⚠️ PERINGATAN: BOT_OWNER_ID tidak dikonfigurasi. Perintah owner-only tidak akan berfungsi.');
         }
 

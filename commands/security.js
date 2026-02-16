@@ -1005,7 +1005,17 @@ class SecurityCommand extends CommandBase {
             return;
         }
 
-        const userInput = args[0];
+        // Sanitize and validate input
+        const userInput = args[0].replace(/[^\d@\.a-z]/gi, ''); // Remove special chars except @, ., digits, letters
+        
+        if (!userInput || userInput.length < 10) {
+            await this.reply(sock, from, msg, 
+                '⚠️ *Input tidak valid*\n\n' +
+                'Nomor telepon harus minimal 10 digit.\n' +
+                'Contoh: `.security allow 6281234567890`');
+            return;
+        }
+        
         const sender = msg.key.participant || from;
 
         // Normalize the user ID
@@ -1043,7 +1053,17 @@ Pengguna sekarang dapat menggunakan semua perintah bot.`;
             return;
         }
 
-        const userInput = args[0];
+        // Sanitize and validate input
+        const userInput = args[0].replace(/[^\d@\.a-z]/gi, ''); // Remove special chars except @, ., digits, letters
+        
+        if (!userInput || userInput.length < 10) {
+            await this.reply(sock, from, msg, 
+                '⚠️ *Input tidak valid*\n\n' +
+                'Nomor telepon harus minimal 10 digit.\n' +
+                'Contoh: `.security unallow 6281234567890`');
+            return;
+        }
+        
         const result = security.revokeAllowedUser(userInput);
 
         if (!result.success) {

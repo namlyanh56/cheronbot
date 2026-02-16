@@ -675,9 +675,13 @@ class SecurityManager {
      * @returns {Object} Result of allow operation
      */
     allowUser(userId, allowedBy) {
-        // Normalize the user ID
+        // Normalize both user ID and allowedBy
         const normalizedIds = this._normalizeUserIdForBlocking(userId);
         const primaryId = normalizedIds[0] || userId;
+        
+        // Normalize the allowedBy ID as well for consistency
+        const normalizedAllowedBy = this._normalizeUserIdForBlocking(allowedBy);
+        const allowedByPrimary = normalizedAllowedBy[0] || allowedBy;
 
         // Owner is always allowed, no need to add
         if (config.isOwner(primaryId)) {
@@ -692,12 +696,12 @@ class SecurityManager {
         // Add to allowlist
         this.allowedUsers.set(primaryId, {
             allowedAt: Date.now(),
-            allowedBy: allowedBy
+            allowedBy: allowedByPrimary
         });
 
         logger.info('User allowed', {
             userId: primaryId.split('@')[0],
-            allowedBy: allowedBy.split('@')[0]
+            allowedBy: allowedByPrimary.split('@')[0]
         });
 
         return { success: true, userId: primaryId };

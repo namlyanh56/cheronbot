@@ -548,7 +548,7 @@ class MenuCommand extends CommandBase {
                 // Hide owner-only commands from non-owners in detailed view
                 if (config.isOwnerOnlyCommand(command.name) && !isOwner) {
                     return await this.reply(sock, from, msg, 
-                        `❌ Perintah atau kategori "${args[0]}" tidak ditemukan.\n\n` +
+                        `❌ Perintah atau kategori tidak ditemukan.\n\n` +
                         `💡 Coba:\n` +
                         `• ${config.bot.prefix}menu - Lihat semua perintah\n` +
                         `• ${config.bot.prefix}menu media - Lihat perintah media\n` +
@@ -564,9 +564,11 @@ class MenuCommand extends CommandBase {
                 return await this.sendCategoryHelp(sock, from, msg, query, isOwner);
             }
             
-            // Not found - suggest similar commands
+            // Not found - suggest similar commands (sanitize user input)
+            // Only show sanitized alphanumeric input in error, max 20 chars
+            const sanitizedQuery = args[0].replace(/[^a-zA-Z0-9]/g, '').slice(0, 20);
             return await this.reply(sock, from, msg, 
-                `❌ Perintah atau kategori "${args[0]}" tidak ditemukan.\n\n` +
+                `❌ Perintah atau kategori "${sanitizedQuery}" tidak ditemukan.\n\n` +
                 `💡 Coba:\n` +
                 `• ${config.bot.prefix}menu - Lihat semua perintah\n` +
                 `• ${config.bot.prefix}menu media - Lihat perintah media\n` +

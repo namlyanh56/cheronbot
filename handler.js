@@ -49,10 +49,10 @@ module.exports = async (sock, m) => {
 
         // GREETING: Send welcome message to new users (first message only)
         if (isNewUser && !security.wasGreetingSent(sender)) {
-            const greetingMsg = `👋 *Selamat datang!*\n\n` +
-                `Terima kasih telah menghubungi bot ini.\n` +
-                `Akun kamu telah terdaftar, namun kamu perlu izin dari admin untuk menggunakan perintah bot.\n\n` +
-                `Mohon tunggu persetujuan dari admin.`;
+            const greetingMsg = `✨ *Halo! Selamat Datang di Cheron Bot Asisten* ✨\n\n` +
+                `👋 Terima kasih telah menghubungi saya!\n` +
+                `🎫 Akun Anda telah terdaftar, namun perlu persetujuan admin untuk menggunakan fitur bot.\n\n` +
+                `⏳ Mohon tunggu konfirmasi dari administrator ya!`;
             
             await sock.sendMessage(from, { text: greetingMsg }, { quoted: msg });
             security.markGreetingSent(sender);
@@ -63,10 +63,10 @@ module.exports = async (sock, m) => {
             // Get block info with remaining time
             const blockInfo = security.getBlockInfo(sender);
             if (blockInfo) {
-                const denialMsg = `🔒 *Akses Diblokir*\n\n` +
-                    `Maaf, akses kamu sedang diblokir.\n` +
-                    `Alasan: ${blockInfo.reason}\n` +
-                    `Waktu tersisa: ${blockInfo.remainingMinutes} menit`;
+                const denialMsg = `🚫 *Akses Diblokir* 🚫\n\n` +
+                    `😔 Maaf, akses Anda sedang diblokir.\n` +
+                    `📌 Alasan: ${blockInfo.reason}\n` +
+                    `⏰ Waktu tersisa: ${blockInfo.remainingMinutes} menit`;
                 
                 await sock.sendMessage(from, { text: denialMsg }, { quoted: msg });
             }
@@ -109,7 +109,7 @@ module.exports = async (sock, m) => {
                 security.trackSuspiciousActivity(sender, 'malicious_pattern');
                 
                 return await sock.sendMessage(from, { 
-                    text: '⚠️ Pesanmu mengandung pola mencurigakan dan diblokir karena alasan keamanan.' 
+                    text: '⚠️ *Peringatan Keamanan*\n\n❌ Pesan Anda mengandung pola mencurigakan dan telah diblokir untuk keamanan sistem.' 
                 }, { quoted: msg });
             }
         }
@@ -121,9 +121,9 @@ module.exports = async (sock, m) => {
         // Owner always has access, other users need explicit allowlist
         if (!security.isUserAllowed(sender)) {
             // Polite denial message for unallowed users (even for unknown commands)
-            const denialMsg = `🔒 *Akses Terbatas*\n\n` +
-                `Maaf, kamu belum mendapat izin untuk menggunakan bot ini.\n` +
-                `Mohon tunggu persetujuan dari admin.`;
+            const denialMsg = `🔐 *Akses Terbatas* 🔐\n\n` +
+                `😊 Maaf, Anda belum mendapat izin menggunakan bot ini.\n` +
+                `📧 Silakan hubungi admin untuk mendapatkan akses.`;
             
             return await sock.sendMessage(from, { text: denialMsg }, { quoted: msg });
         }
@@ -153,7 +153,7 @@ module.exports = async (sock, m) => {
             });
             
             return await sock.sendMessage(from, { 
-                text: `⚠️ Keamanan: ${argsValidation.reason}` 
+                text: `⚠️ *Peringatan Keamanan*\n\n${argsValidation.reason}` 
             }, { quoted: msg });
         }
 
@@ -167,7 +167,7 @@ module.exports = async (sock, m) => {
             });
             
             return await sock.sendMessage(from, { 
-                text: `🔒 Akses Ditolak: ${permission.reason}` 
+                text: `🔒 *Akses Ditolak*\n\n${permission.reason}` 
             }, { quoted: msg });
         }
 
@@ -176,7 +176,7 @@ module.exports = async (sock, m) => {
         if (!rateLimit.allowed) {
             security.trackSuspiciousActivity(sender, 'rate_limit_exceeded');
             return sock.sendMessage(from, { 
-                text: `⏳ Batas request tercapai. Coba lagi dalam ${rateLimit.retryAfter} detik.` 
+                text: `⏳ *Mohon Tunggu Sebentar*\n\n🔄 Batas request tercapai.\n⏱️ Coba lagi dalam ${rateLimit.retryAfter} detik ya!` 
             }, { quoted: msg });
         }
 
@@ -192,7 +192,7 @@ module.exports = async (sock, m) => {
         if (isHeavyCommand) {
             if (activeProcesses >= config.performance.maxProcesses) {
                 return sock.sendMessage(from, { 
-                    text: `⚠️ Server sibuk (${activeProcesses}/${config.performance.maxProcesses}). Mohon tunggu...` 
+                    text: `⚙️ *Server Sedang Sibuk*\n\n🔄 Proses: ${activeProcesses}/${config.performance.maxProcesses}\n⏳ Mohon tunggu sebentar...` 
                 }, { quoted: msg });
             }
             activeProcesses++;
@@ -228,7 +228,7 @@ module.exports = async (sock, m) => {
             const from = m.messages[0]?.key?.remoteJid;
             if (from) {
                 await sock.sendMessage(from, { 
-                    text: '❌ Terjadi kesalahan saat memproses perintahmu.' 
+                    text: '❌ *Ups! Terjadi Kesalahan*\n\n😔 Maaf, terjadi kesalahan saat memproses perintah Anda.\n💡 Silakan coba lagi atau hubungi admin.' 
                 }, { quoted: m.messages[0] });
             }
         } catch (sendError) {

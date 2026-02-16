@@ -8,10 +8,10 @@ require('dotenv').config();
 class Config {
     constructor() {
         this.bot = {
-            name: process.env.BOT_NAME || 'HamBot',
+            name: process.env.BOT_NAME || 'Cheron Bot Asisten',
             owner: process.env.BOT_OWNER || 'Ilham',
             prefix: process.env.BOT_PREFIX || '.',
-            browser: ['HamBot', 'Chrome', '1.0.0'],
+            browser: ['Cheron Bot Asisten', 'Chrome', '1.0.0'],
             // Private mode: ignore private messages when true
             onlyGroupMode: process.env.ONLY_GROUP_MODE === 'true',
             // Owner IDs - supports both private (@s.whatsapp.net) and group (@lid) formats

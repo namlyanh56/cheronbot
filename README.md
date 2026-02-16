@@ -1,4 +1,4 @@
-# HamBot - Advanced WhatsApp Bot 🤖
+# Cheron Bot Asisten - Bot WhatsApp Canggih 🤖
 
 Bot WhatsApp canggih yang dibangun dengan Baileys, dilengkapi dengan fitur download media, text-to-speech AI, referensi jaringan, dan banyak lagi. Semua dalam **Bahasa Indonesia**!
 
@@ -60,7 +60,7 @@ Create a `.env` file in the root directory with the following variables:
 
 ```env
 # Bot Configuration
-BOT_NAME=HamBot
+BOT_NAME=Cheron Bot Asisten
 BOT_OWNER=Ilham
 BOT_PREFIX=.
 BOT_OWNER_ID=your_phone_number@s.whatsapp.net
@@ -128,7 +128,7 @@ This ensures:
 
 ## 📋 Daftar Perintah
 
-### Umum
+### 🎯 Umum
 | Perintah | Deskripsi |
 |----------|-----------|
 | `.menu` | Menampilkan daftar perintah |
@@ -136,7 +136,7 @@ This ensures:
 | `.menu <perintah>` | Lihat detail perintah |
 | `.ping` | Cek status bot |
 
-### Media
+### 🎵 Media
 | Perintah | Deskripsi |
 |----------|-----------|
 | `.music <nama lagu>` | Download musik |
@@ -145,7 +145,7 @@ This ensures:
 | `.sticker` | Ubah gambar jadi stiker |
 | `.toimg` | Ubah stiker jadi gambar |
 
-### Entertainment
+### 🎬 Entertainment
 | Perintah | Deskripsi |
 |----------|-----------|
 | `.quote` | Kutipan inspirasional Indonesia |
@@ -155,7 +155,7 @@ This ensures:
 | `.dice` | Lempar dadu |
 | `.8ball` | Tanya bola ajaib |
 
-### Teknikal
+### 🖥️ Teknikal
 | Perintah | Deskripsi |
 |----------|-----------|
 | `.netinfo` | Referensi jaringan lengkap |
@@ -169,7 +169,7 @@ This ensures:
 | `.dns <domain>` | DNS lookup |
 | `.port <nomor>` | Info port jaringan |
 
-### Informasi
+### ℹ️ Informasi
 | Perintah | Deskripsi |
 |----------|-----------|
 | `.movie <judul>` | Info film dari OMDb |
@@ -178,7 +178,7 @@ This ensures:
 | `.wiki <query>` | Cari di Wikipedia |
 | `.crypto <coin>` | Harga cryptocurrency |
 
-### Grup
+### 👥 Grup
 | Perintah | Deskripsi |
 |----------|-----------|
 | `.tagall` | Tag semua member |
@@ -196,8 +196,8 @@ This ensures:
 
 1. **Clone repository**
 ```bash
-git clone https://github.com/AkilixCode/hambot-wa-bot.git
-cd hambot-wa-bot
+git clone https://github.com/namlyanh56/cheronbot.git
+cd cheronbot
 ```
 
 2. **Install dependencies**
@@ -239,7 +239,7 @@ Edit file `.env` untuk kustomisasi:
 
 ```env
 # Pengaturan Bot
-BOT_NAME=HamBot
+BOT_NAME=Cheron Bot Asisten
 BOT_OWNER=YourName
 BOT_PREFIX=.
 

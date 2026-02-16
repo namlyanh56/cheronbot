@@ -44,10 +44,34 @@ module.exports = async (sock, m) => {
             return; // Silently ignore private messages
         }
 
+        // USER REGISTRATION: Register new users on first message
+        const isNewUser = security.registerUserIfNew(sender);
+
+        // GREETING: Send welcome message to new users (first message only)
+        if (isNewUser && !security.wasGreetingSent(sender)) {
+            const greetingMsg = `👋 *Selamat datang!*\n\n` +
+                `Terima kasih telah menghubungi bot ini.\n` +
+                `Akun kamu telah terdaftar, namun kamu perlu izin dari admin untuk menggunakan perintah bot.\n\n` +
+                `Mohon tunggu persetujuan dari admin.`;
+            
+            await sock.sendMessage(from, { text: greetingMsg }, { quoted: msg });
+            security.markGreetingSent(sender);
+        }
+
         // SECURITY: Check if user is blocked
         if (security.isUserBlocked(sender)) {
+            // Get block info with remaining time
+            const blockInfo = security.getBlockInfo(sender);
+            if (blockInfo) {
+                const denialMsg = `🔒 *Akses Diblokir*\n\n` +
+                    `Maaf, akses kamu sedang diblokir.\n` +
+                    `Alasan: ${blockInfo.reason}\n` +
+                    `Waktu tersisa: ${blockInfo.remainingMinutes} menit`;
+                
+                await sock.sendMessage(from, { text: denialMsg }, { quoted: msg });
+            }
             logger.warn('Blocked user attempted command', { userId: sender.split('@')[0] });
-            return; // Silently ignore
+            return;
         }
 
         // Extract text content
@@ -92,7 +116,20 @@ module.exports = async (sock, m) => {
 
         // Get command from registry
         command = commandRegistry.get(commandName);
-        if (!command) return; // Unknown command, ignore
+        
+        // ACCESS CONTROL: Check if user is allowed to use commands
+        // Owner always has access, other users need explicit allowlist
+        if (!security.isUserAllowed(sender)) {
+            // Polite denial message for unallowed users (even for unknown commands)
+            const denialMsg = `🔒 *Akses Terbatas*\n\n` +
+                `Maaf, kamu belum mendapat izin untuk menggunakan bot ini.\n` +
+                `Mohon tunggu persetujuan dari admin.`;
+            
+            return await sock.sendMessage(from, { text: denialMsg }, { quoted: msg });
+        }
+        
+        // If command not found, silently ignore (only for allowed users)
+        if (!command) return;
 
         // Build context
         const context = {

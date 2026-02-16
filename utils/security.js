@@ -43,6 +43,10 @@ class SecurityManager {
             rateLimitEnabled: true,   // Can be toggled at runtime
             autoBlockEnabled: true    // Auto-block on suspicious activity
         };
+
+        // User access control
+        this.registeredUsers = new Map(); // {userId: {firstSeen, greetingSent}}
+        this.allowedUsers = new Map();    // {userId: {allowedAt, allowedBy}}
     }
 
     /**
@@ -477,6 +481,9 @@ class SecurityManager {
             suspiciousActivityTracked: this.suspiciousActivity.size,
             securityEvents: this.securityEvents.size,
             runtimeSettings: { ...this.runtimeSettings },
+            // User access stats
+            registeredUsers: this.registeredUsers.size,
+            allowedUsers: this.allowedUsers.size,
             recentBlocks: Array.from(this.blockedUsers.entries()).map(([id, info]) => ({
                 userId: id.split('@')[0],
                 reason: info.reason,
@@ -585,6 +592,213 @@ class SecurityManager {
             until: info.until,
             expiresIn: Math.max(0, info.until - Date.now())
         }));
+    }
+
+    /**
+     * Register user if new (first message)
+     * @param {string} userId - User ID to register
+     * @returns {boolean} - True if newly registered, false if already registered
+     */
+    registerUserIfNew(userId) {
+        // Owner doesn't need registration
+        if (config.isOwner(userId)) {
+            return false;
+        }
+
+        // Normalize ID for consistent tracking
+        const normalizedIds = this._normalizeUserIdForBlocking(userId);
+        const primaryId = normalizedIds[0] || userId;
+
+        if (!this.registeredUsers.has(primaryId)) {
+            this.registeredUsers.set(primaryId, {
+                firstSeen: Date.now(),
+                greetingSent: false
+            });
+            logger.info('New user registered', { userId: primaryId.split('@')[0] });
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if greeting was sent to user
+     * @param {string} userId - User ID
+     * @returns {boolean}
+     */
+    wasGreetingSent(userId) {
+        const normalizedIds = this._normalizeUserIdForBlocking(userId);
+        const primaryId = normalizedIds[0] || userId;
+        
+        const userInfo = this.registeredUsers.get(primaryId);
+        return userInfo ? userInfo.greetingSent : false;
+    }
+
+    /**
+     * Mark greeting as sent for user
+     * @param {string} userId - User ID
+     */
+    markGreetingSent(userId) {
+        const normalizedIds = this._normalizeUserIdForBlocking(userId);
+        const primaryId = normalizedIds[0] || userId;
+        
+        if (this.registeredUsers.has(primaryId)) {
+            const userInfo = this.registeredUsers.get(primaryId);
+            userInfo.greetingSent = true;
+            this.registeredUsers.set(primaryId, userInfo);
+        }
+    }
+
+    /**
+     * Check if user is allowed to use commands
+     * Owner always has access
+     * @param {string} userId - User ID
+     * @returns {boolean}
+     */
+    isUserAllowed(userId) {
+        // Owner always has access
+        if (config.isOwner(userId)) {
+            return true;
+        }
+
+        // Check if user is in allowlist
+        const normalizedIds = this._normalizeUserIdForBlocking(userId);
+        const primaryId = normalizedIds[0] || userId;
+        
+        return this.allowedUsers.has(primaryId);
+    }
+
+    /**
+     * Allow a user to use bot commands
+     * Cannot allow owner (owner is always allowed)
+     * @param {string} userId - User ID to allow
+     * @param {string} allowedBy - Owner ID who granted access
+     * @returns {Object} Result of allow operation
+     */
+    allowUser(userId, allowedBy) {
+        // Normalize the user ID
+        const normalizedIds = this._normalizeUserIdForBlocking(userId);
+        const primaryId = normalizedIds[0] || userId;
+
+        // Owner is always allowed, no need to add
+        if (config.isOwner(primaryId)) {
+            return { success: false, reason: 'Owner sudah memiliki akses penuh' };
+        }
+
+        // Check if already allowed
+        if (this.allowedUsers.has(primaryId)) {
+            return { success: false, reason: 'User sudah diizinkan' };
+        }
+
+        // Add to allowlist
+        this.allowedUsers.set(primaryId, {
+            allowedAt: Date.now(),
+            allowedBy: allowedBy
+        });
+
+        logger.info('User allowed', {
+            userId: primaryId.split('@')[0],
+            allowedBy: allowedBy.split('@')[0]
+        });
+
+        return { success: true, userId: primaryId };
+    }
+
+    /**
+     * Revoke user access (remove from allowlist)
+     * Cannot revoke owner access
+     * @param {string} userId - User ID to revoke
+     * @returns {Object} Result of revoke operation
+     */
+    revokeAllowedUser(userId) {
+        // Normalize the user ID
+        const normalizedIds = this._normalizeUserIdForBlocking(userId);
+        const primaryId = normalizedIds[0] || userId;
+
+        // Cannot revoke owner
+        if (config.isOwner(primaryId)) {
+            return { success: false, reason: 'Tidak dapat mencabut akses owner' };
+        }
+
+        // Check if user is in allowlist
+        if (!this.allowedUsers.has(primaryId)) {
+            return { success: false, reason: 'User tidak ada di allowlist' };
+        }
+
+        // Remove from allowlist
+        this.allowedUsers.delete(primaryId);
+
+        logger.info('User access revoked', {
+            userId: primaryId.split('@')[0]
+        });
+
+        return { success: true, userId: primaryId };
+    }
+
+    /**
+     * Get list of allowed users
+     * @returns {Array}
+     */
+    getAllowedUsers() {
+        return Array.from(this.allowedUsers.entries()).map(([id, info]) => ({
+            userId: id,
+            userIdShort: id.split('@')[0],
+            allowedAt: info.allowedAt,
+            allowedBy: info.allowedBy,
+            allowedByShort: info.allowedBy ? info.allowedBy.split('@')[0] : 'system'
+        }));
+    }
+
+    /**
+     * Get list of registered users
+     * @returns {Array}
+     */
+    getRegisteredUsers() {
+        return Array.from(this.registeredUsers.entries()).map(([id, info]) => ({
+            userId: id,
+            userIdShort: id.split('@')[0],
+            firstSeen: info.firstSeen,
+            greetingSent: info.greetingSent
+        }));
+    }
+
+    /**
+     * Get user access statistics
+     * @returns {Object}
+     */
+    getUserAccessStats() {
+        return {
+            totalRegistered: this.registeredUsers.size,
+            totalAllowed: this.allowedUsers.size,
+            totalBlocked: this.blockedUsers.size
+        };
+    }
+
+    /**
+     * Get block info for a user (remaining time, reason)
+     * @param {string} userId - User ID
+     * @returns {Object|null} Block info or null if not blocked
+     */
+    getBlockInfo(userId) {
+        if (!this.isUserBlocked(userId)) {
+            return null;
+        }
+
+        // Check all normalized IDs
+        const normalizedIds = this._normalizeUserIdForBlocking(userId);
+        for (const normalizedId of [userId, ...normalizedIds]) {
+            if (this.blockedUsers.has(normalizedId)) {
+                const blockInfo = this.blockedUsers.get(normalizedId);
+                const remainingMs = Math.max(0, blockInfo.until - Date.now());
+                return {
+                    reason: blockInfo.reason,
+                    remainingMs: remainingMs,
+                    remainingMinutes: Math.ceil(remainingMs / 60000),
+                    expiresAt: new Date(blockInfo.until).toISOString()
+                };
+            }
+        }
+
+        return null;
     }
 
     /**

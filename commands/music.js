@@ -7,11 +7,14 @@
 
 const CommandBase = require('./base');
 const { spawn } = require('child_process');
-const { createTempFile, cleanupFiles, isValidUrl } = require('../utils/helpers');
+const { createTempFile, cleanupFiles, isValidUrl, checkCommand } = require('../utils/helpers');
 const { identifyPlatform, isAudioSupported, getPlatformArgs, getSupportedPlatformsText } = require('../utils/url-parser');
 const fsPromises = require('fs').promises;
 const path = require('path');
 const config = require('../config');
+
+// Download timeout: 120 seconds
+const DOWNLOAD_TIMEOUT = 120000;
 
 class MusicCommand extends CommandBase {
     constructor() {
@@ -27,22 +30,38 @@ class MusicCommand extends CommandBase {
     }
 
     /**
-     * Execute yt-dlp using python3 -m yt_dlp for plugin support
-     * This uses python3 which is in the allowed commands list in helpers.js
+     * Execute yt-dlp as binary CLI
+     * Uses yt-dlp binary directly (not python3 -m yt_dlp)
      */
     spawnYtDlp(args) {
         return new Promise((resolve, reject) => {
-            // python3 is in the allowed commands list in helpers.js
-            const proc = spawn('python3', ['-m', 'yt_dlp', ...args]);
+            const proc = spawn('yt-dlp', args);
             let stdout = '';
             let stderr = '';
+            
+            // Set timeout
+            const timeout = setTimeout(() => {
+                proc.kill();
+                reject(new Error('yt-dlp timeout after 120 seconds'));
+            }, DOWNLOAD_TIMEOUT);
+            
             proc.stdout.on('data', (data) => stdout += data);
             proc.stderr.on('data', (data) => stderr += data);
+            
             proc.on('close', (code) => {
+                clearTimeout(timeout);
                 if (code === 0) resolve(stdout);
                 else reject(new Error(stderr || `yt-dlp failed with code ${code}`));
             });
-            proc.on('error', (err) => reject(err));
+            
+            proc.on('error', (err) => {
+                clearTimeout(timeout);
+                if (err.code === 'ENOENT') {
+                    reject(new Error('yt-dlp not found. Please install yt-dlp binary.'));
+                } else {
+                    reject(err);
+                }
+            });
         });
     }
 
@@ -64,6 +83,17 @@ class MusicCommand extends CommandBase {
                 '• .music https://soundcloud.com/artist/track\n' +
                 '• .music https://open.spotify.com/track/xxx\n\n' +
                 `🌐 *Platform Audio Didukung:*\n${supportedPlatforms.audio}`
+            );
+        }
+
+        // Check if yt-dlp is available
+        const ytdlpAvailable = await checkCommand('yt-dlp');
+        if (!ytdlpAvailable) {
+            return await this.reply(sock, from, msg, 
+                '❌ *Dependency Tidak Tersedia*\n\n' +
+                '😔 yt-dlp belum terinstal di sistem.\n' +
+                '📧 Hubungi admin untuk menginstal yt-dlp.\n\n' +
+                '💡 Instalasi: `pip install yt-dlp` atau `brew install yt-dlp`'
             );
         }
 
@@ -216,13 +246,17 @@ class MusicCommand extends CommandBase {
             
             // Friendly error messages
             let errorMsg = '❌ Gagal download musik.';
-            if (error.message.includes('too large') || error.message.includes('>200MB')) {
+            if (error.message.includes('yt-dlp not found') || error.message.includes('ENOENT')) {
+                errorMsg = '❌ *Dependency Tidak Tersedia*\n\n😔 yt-dlp belum terinstal.\n📧 Hubungi admin.';
+            } else if (error.message.includes('timeout')) {
+                errorMsg = '⏱️ Proses download timeout (>120 detik). Lagu terlalu besar atau koneksi lambat.';
+            } else if (error.message.includes('too large') || error.message.includes('>200MB')) {
                 errorMsg = '📦 Waduh, filenya kegedean bro (>200MB)! Coba lagu yang lebih pendek ya 😅';
             } else if (error.message.includes('Sign in') || error.message.includes('bot')) {
                 errorMsg = '⚠️ YouTube sedang blocking. Coba lagi nanti atau hubungi admin.';
             } else if (error.message.includes('No video')) {
                 errorMsg = '❌ Lagu tidak ditemukan. Coba kata kunci lain.';
-            } else if (error.message.includes('timeout') || error.message.includes('TransportError')) {
+            } else if (error.message.includes('TransportError')) {
                 errorMsg = '⏱️ Koneksi ke YouTube timeout. Coba lagi nanti!';
             } else if (error.message.includes('Unable to download') || error.message.includes('Connection refused')) {
                 errorMsg = '🌐 Koneksi gagal. Coba lagi nanti!';

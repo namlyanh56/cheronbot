@@ -36,6 +36,7 @@ class PinterestCommand extends CommandBase {
         const sentKey = `pinterest_sent:${query.toLowerCase()}`;
 
         let page = null;
+        let browserLaunchTimeout = null;
 
         try {
             // Get all scraped URLs from cache (full pool of images)
@@ -44,14 +45,34 @@ class PinterestCommand extends CommandBase {
             if (!allScrapedUrls || !Array.isArray(allScrapedUrls) || allScrapedUrls.length === 0) {
                 // Need to scrape fresh images
                 try {
+                    // Add timeout for browser launch (30 seconds)
+                    browserLaunchTimeout = setTimeout(() => {
+                        throw new Error('Browser launch timeout after 30 seconds');
+                    }, 30000);
+                    
                     page = await browserManager.newPage();
+                    
+                    clearTimeout(browserLaunchTimeout);
+                    browserLaunchTimeout = null;
+                    
                 } catch (error) {
+                    if (browserLaunchTimeout) {
+                        clearTimeout(browserLaunchTimeout);
+                    }
+                    
                     if (error.message.includes('Puppeteer is not available')) {
                         return await this.reply(sock, from, msg,
                             '❌ *Fitur Tidak Tersedia*\n\n' +
                             '😔 Pencarian Pinterest memerlukan Puppeteer.\n' +
                             'Dependensi ini sedang dinonaktifkan.\n\n' +
                             '💡 Hubungi admin untuk mengaktifkan: ENABLE_PUPPETEER=true'
+                        );
+                    } else if (error.message.includes('timeout')) {
+                        return await this.reply(sock, from, msg,
+                            '❌ *Browser Launch Gagal*\n\n' +
+                            '⏱️ Browser gagal diluncurkan (timeout 30 detik).\n' +
+                            '💡 Chromium mungkin belum terinstal atau crashed.\n' +
+                            '📧 Hubungi admin untuk mengecek instalasi Puppeteer.'
                         );
                     }
                     throw error;
@@ -135,7 +156,16 @@ class PinterestCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ *Gagal Mengambil Gambar*\n\n😔 Maaf, terjadi kesalahan.\n💡 Silakan coba lagi nanti.');
+            
+            let errorMsg = '❌ *Gagal Mengambil Gambar*\n\n😔 Maaf, terjadi kesalahan.';
+            
+            if (error.message.includes('timeout')) {
+                errorMsg = '⏱️ *Timeout*\n\n😔 Proses scraping timeout.\n💡 Coba lagi atau gunakan kata kunci lain.';
+            } else if (error.message.includes('Browser')) {
+                errorMsg += '\n💡 Masalah dengan browser. Hubungi admin.';
+            }
+            
+            await this.reply(sock, from, msg, errorMsg);
         } finally {
             if (page) {
                 await browserManager.closePage(page);

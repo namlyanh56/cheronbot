@@ -8,7 +8,7 @@ const CommandBase = require('./base');
 const httpClient = require('../utils/http-client');
 const config = require('../config');
 const { spawn } = require('child_process');
-const { createTempFile, cleanupFiles } = require('../utils/helpers');
+const { createTempFile, cleanupFiles, checkCommand } = require('../utils/helpers');
 const path = require('path');
 const fsPromises = require('fs').promises;
 
@@ -127,6 +127,26 @@ class SayCommand extends CommandBase {
                 throw new Error('Audio kosong dari API');
             }
 
+            // Check if ffmpeg is available for OGG conversion
+            const ffmpegAvailable = await checkCommand('ffmpeg');
+            
+            if (!ffmpegAvailable) {
+                // Fallback: send MP3 as audio (not voice note)
+                await sock.sendMessage(from, {
+                    audio: audioBuffer,
+                    mimetype: 'audio/mpeg'
+                }, { quoted: msg });
+                
+                await this.react(sock, msg, '✅');
+                
+                // Send info about missing ffmpeg
+                await this.reply(sock, from, msg, 
+                    '💡 *Info*: Audio dikirim sebagai MP3 (bukan voice note).\n' +
+                    'Untuk voice note, admin perlu menginstal ffmpeg.'
+                );
+                return;
+            }
+
             // Convert MP3 to OGG Opus for WhatsApp voice note compatibility
             const mp3Path = `${filePrefix}.mp3`;
             const oggPath = `${filePrefix}.ogg`;
@@ -160,6 +180,8 @@ class SayCommand extends CommandBase {
                 errorMsg = '❌ *Kuota API Habis*\n\n⏰ Kuota API ElevenLabs sudah habis.\n💡 Coba lagi nanti ya!';
             } else if (error.message.includes('timeout')) {
                 errorMsg = '❌ *Server Tidak Merespon*\n\n⏱️ Server ElevenLabs tidak merespon.\n💡 Coba lagi dalam beberapa saat!';
+            } else if (error.message.includes('ffmpeg failed')) {
+                errorMsg = '❌ *Konversi Audio Gagal*\n\n😔 Gagal mengkonversi audio ke voice note.\n💡 Hubungi admin untuk cek ffmpeg.';
             }
             
             await this.reply(sock, from, msg, errorMsg);

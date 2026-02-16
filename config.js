@@ -45,8 +45,12 @@ class Config {
                 key: process.env.ELEVENLABS_API_KEY,
                 voiceId: process.env.ELEVENLABS_VOICE_ID || 'plgKUYgnlZ1DCNh54DwJ'
             },
-            omdb: { key: process.env.OMDB_API_KEY },
-            gemini: { key: process.env.GEMINI_API_KEY }
+            omdb: {
+                key: process.env.OMDB_API_KEY
+            },
+            gemini: {
+                key: process.env.GEMINI_API_KEY
+            }
         };
 
         this.logging = {
@@ -143,10 +147,12 @@ class Config {
 
     /**
      * Get proxy URL for yt-dlp and other CLI tools
-     * Priority: proxy.url (from PROXY_* env vars) > media.proxyUrl (from legacy HB_PROXY_URL)
+     * Priority: proxy.url (from PROXY_* env vars) > media.proxyUrl (from HB_PROXY_URL legacy)
      */
     getProxyUrl() {
-        if (!this.proxy.enabled) return null;
+        if (!this.proxy.enabled) {
+            return null;
+        }
         // Primary: Use proxy.url built from PROXY_* env vars
         // Fallback: Use media.proxyUrl from legacy HB_PROXY_URL for backward compatibility
         return this.proxy.url || this.media.proxyUrl;
@@ -179,6 +185,8 @@ class Config {
      */
     _normalizeOwnerId(ownerId) {
         if (!ownerId) return null;
+        
+        // If comma-separated, return the first one
         const firstId = ownerId.split(',')[0];
         return this._normalizeSingleOwnerId(firstId);
     }
@@ -191,6 +199,7 @@ class Config {
      */
     _normalizeOwnerIds(ownerIdStr) {
         if (!ownerIdStr) return [];
+        
         return ownerIdStr
             .split(',')
             .map(id => this._normalizeSingleOwnerId(id.trim()))
@@ -204,14 +213,19 @@ class Config {
      */
     _normalizeSingleOwnerId(ownerId) {
         if (!ownerId) return null;
+        
+        // Remove any whitespace
         let normalized = ownerId.trim();
+        
         // Accept both @s.whatsapp.net and @lid formats directly
         if (normalized.endsWith('@s.whatsapp.net') || normalized.endsWith('@lid')) {
             return normalized;
         }
+        
         // Otherwise, assume it's a phone number - normalize and add @s.whatsapp.net suffix
         const number = normalized.replace(/\D/g, '');
         if (!number) return null;
+        
         return `${number}@s.whatsapp.net`;
     }
 
@@ -223,59 +237,61 @@ class Config {
      */
     isOwner(senderId) {
         if (!senderId) return false;
+        
+        // Check against all owner IDs
         const ownerIds = this.bot.ownerIds;
         if (!ownerIds || ownerIds.length === 0) return false;
-
+        
         for (const ownerId of ownerIds) {
             if (this._matchesOwnerId(senderId, ownerId)) {
                 return true;
             }
         }
+        
         return false;
     }
 
     /**
-     * Check if sender matches a specific owner ID (resilient to suffix/device variations)
+     * Check if sender matches a specific owner ID
+     * Robust: exact match, digit-only fallback, and normalized forms.
      * @param {string} senderId - Sender JID
      * @param {string} ownerId - Owner ID to check against
      * @returns {boolean}
      */
     _matchesOwnerId(senderId, ownerId) {
         if (!ownerId || !senderId) return false;
-
-        // Exact match
-        if (senderId === ownerId) return true;
-
-        // Fallback: compare digit-only (handles @lid, @s.whatsapp.net, device suffix like :1@)
-        const senderDigits = senderId.replace(/\D/g, '');
-        const ownerDigits = ownerId.replace(/\D/g, '');
-        if (senderDigits && ownerDigits && senderDigits === ownerDigits) {
+        
+        // 1) Direct match
+        if (senderId === ownerId) {
             return true;
         }
 
-        // Existing normalization for @s.whatsapp.net owners
+        // 2) Fallback: compare digit-only (handles @lid, @s.whatsapp.net, device suffix like :1@)
+        const senderDigits = senderId.replace(/\D/g, '');
+        const ownerDigits  = ownerId.replace(/\D/g, '');
+        if (senderDigits && ownerDigits && senderDigits === ownerDigits) {
+            return true;
+        }
+        
+        // 3) Existing normalization for @s.whatsapp.net owners
         if (ownerId.endsWith('@s.whatsapp.net')) {
             let normalizedSender = senderId;
-
-            // If sender uses @lid format, attempt digit match already handled above
-            if (senderId.endsWith('@lid')) {
-                return false;
-            }
-
-            // Participant format from group (e.g., "user:device@server")
+            
+            // Participant format (group/device): split before ':' then add @s.whatsapp.net
             if (senderId.includes(':')) {
                 normalizedSender = senderId.split(':')[0] + '@s.whatsapp.net';
             }
-
-            // Ensure @s.whatsapp.net suffix
+            
+            // Normalize suffix to @s.whatsapp.net if needed
             if (!normalizedSender.endsWith('@s.whatsapp.net')) {
                 const number = normalizedSender.replace(/\D/g, '');
                 normalizedSender = `${number}@s.whatsapp.net`;
             }
-
+            
             return normalizedSender === ownerId;
         }
-
+        
+        // 4) If ownerId is @lid, digit-only fallback already covers it
         return false;
     }
 
@@ -308,6 +324,7 @@ class Config {
         }
 
         if (!this.bot.ownerIds || this.bot.ownerIds.length === 0) {
+            // Note: Using console.warn here instead of logger to avoid circular dependency
             console.warn('⚠️ PERINGATAN: BOT_OWNER_ID tidak dikonfigurasi. Perintah owner-only tidak akan berfungsi.');
         }
 

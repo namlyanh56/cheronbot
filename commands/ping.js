@@ -43,24 +43,24 @@ class PingCommand extends CommandBase {
             const uptimeFormatted = this.formatUptime(uptime);
 
             const response = 
-`💻 *STATUS SISTEM*
+`✨ *STATUS SISTEM* ✨
 
-🖥️ **Info Sistem**
+🖥️ *Info Sistem*
 • Host: ${os.hostname()}
 • OS: ${os.type()} ${os.arch()}
 • CPU: ${cpus[0].model.substring(0, 40)}...
 • Cores: ${cpus.length}
 
-📊 **Penggunaan Memori**
+📊 *Penggunaan Memori*
 • Bot: ${formatSize(mem)}
 • Sistem: ${formatSize(totalMem - freeMem)} / ${formatSize(totalMem)}
 • Tersedia: ${formatSize(freeMem)}
 
-⚡ **Performa**
+⚡ *Performa*
 • Latensi: ${latency}ms
 • Uptime: ${uptimeFormatted}
 
-💾 **Stats Cache**
+💾 *Stats Cache*
 • Ukuran: ${cacheStats.size} entri
 • Hit Rate: ${cacheStats.hitRate}
 • Hits: ${cacheStats.hits} | Misses: ${cacheStats.misses}`;
@@ -70,7 +70,7 @@ class PingCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Gagal mengambil status sistem.');
+            await this.reply(sock, from, msg, '❌ *Gagal Mengambil Status*\n\n😔 Maaf, terjadi kesalahan saat mengambil status sistem.\n💡 Silakan coba lagi.');
         }
     }
 

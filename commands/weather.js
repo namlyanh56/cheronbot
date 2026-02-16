@@ -24,7 +24,13 @@ class WeatherCommand extends CommandBase {
 
         if (!args[0]) {
             return await this.reply(sock, from, msg, 
-                '🌤️ *Info Cuaca*\n\n📝 Cara Pakai: .weather <kota>\n\n📌 Contoh:\n• .weather Jakarta\n• .weather Bandung\n• .weather Surabaya');
+                '🌤️ *Info Cuaca*\n\n' +
+                '📝 *Cara Pakai:*\n' +
+                '`.weather <nama kota>`\n\n' +
+                '💡 *Contoh:*\n' +
+                '• `.weather Jakarta`\n' +
+                '• `.weather Bandung`\n' +
+                '• `.weather Surabaya`');
         }
 
         await this.react(sock, msg, '🌤️');
@@ -52,7 +58,10 @@ class WeatherCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, `❌ Tidak bisa mengambil data cuaca untuk "${location}". Periksa nama lokasinya.`);
+            await this.reply(sock, from, msg, 
+                `❌ *Gagal Mengambil Data Cuaca*\n\n` +
+                `😔 Tidak bisa mengambil data cuaca untuk "${location}".\n` +
+                `💡 Periksa penulisan nama lokasi dan coba lagi.`);
         }
     }
 
@@ -77,18 +86,18 @@ class WeatherCommand extends CommandBase {
             const emoji = this.getWeatherEmoji(weatherDesc);
 
             const info = 
-`${emoji} *Laporan Cuaca*
+`${emoji} *Laporan Cuaca* ${emoji}
 
-📍 Lokasi: ${locationName}, ${country}
-🌡️ Suhu: ${temp}°C (terasa ${feelsLike}°C)
-☁️ Kondisi: ${weatherDesc}
-💧 Kelembaban: ${humidity}%
-💨 Angin: ${windSpeed} km/h ${windDir}
-📊 Tekanan: ${pressure} mb
-👁️ Visibilitas: ${visibility} km
-☀️ Indeks UV: ${uvIndex}
+📍 *Lokasi:* ${locationName}, ${country}
+🌡️ *Suhu:* ${temp}°C (terasa ${feelsLike}°C)
+☁️ *Kondisi:* ${weatherDesc}
+💧 *Kelembaban:* ${humidity}%
+💨 *Angin:* ${windSpeed} km/h ${windDir}
+📊 *Tekanan:* ${pressure} mb
+👁️ *Visibilitas:* ${visibility} km
+☀️ *Indeks UV:* ${uvIndex}
 
-${fromCache ? '📦 _(dari cache)_' : '🔄 _Data langsung_'}`;
+${fromCache ? '📦 _(data dari cache)_' : '🔄 _(data real-time)_'}`;
 
             await this.reply(sock, from, msg, info);
             await this.react(sock, msg, '✅');

@@ -531,9 +531,12 @@ class MenuCommand extends CommandBase {
     }
 
     async execute(sock, msg, args, context) {
-        const { from } = context;
+        const { from, sender } = context;
 
         await this.react(sock, msg, '📋');
+        
+        // Check if sender is owner
+        const isOwner = config.isOwner(sender);
 
         // If argument provided
         if (args[0]) {
@@ -542,13 +545,23 @@ class MenuCommand extends CommandBase {
             // First, check if it's a command name
             const command = commandRegistry.get(query);
             if (command) {
+                // Hide owner-only commands from non-owners in detailed view
+                if (config.isOwnerOnlyCommand(command.name) && !isOwner) {
+                    return await this.reply(sock, from, msg, 
+                        `❌ Perintah atau kategori "${args[0]}" tidak ditemukan.\n\n` +
+                        `💡 Coba:\n` +
+                        `• ${config.bot.prefix}menu - Lihat semua perintah\n` +
+                        `• ${config.bot.prefix}menu media - Lihat perintah media\n` +
+                        `• ${config.bot.prefix}menu video - Detail perintah video`
+                    );
+                }
                 return await this.sendCommandHelp(sock, from, msg, command);
             }
             
             // Second, check if it's a category
             const categoryCommands = commandRegistry.getByCategory(query);
             if (categoryCommands.length > 0) {
-                return await this.sendCategoryHelp(sock, from, msg, query);
+                return await this.sendCategoryHelp(sock, from, msg, query, isOwner);
             }
             
             // Not found - suggest similar commands
@@ -572,15 +585,42 @@ class MenuCommand extends CommandBase {
         menuSections.push('Berikut daftar perintah:');
         menuSections.push('');
 
+        // Admin menu section (owner only)
+        if (isOwner) {
+            menuSections.push('👑 *Admin Menu (Owner Only)*');
+            menuSections.push('• *Manajemen Akses Pengguna*');
+            menuSections.push(`  ${config.bot.prefix}security allow <nomor> - Izinkan pengguna`);
+            menuSections.push(`  ${config.bot.prefix}security unallow <nomor> - Cabut akses`);
+            menuSections.push(`  ${config.bot.prefix}security users - Lihat statistik pengguna`);
+            menuSections.push(`  ${config.bot.prefix}security allowlist - Daftar pengguna diizinkan`);
+            menuSections.push('');
+            menuSections.push('• *Manajemen Blokir*');
+            menuSections.push(`  ${config.bot.prefix}security block <nomor> <menit> - Blokir pengguna`);
+            menuSections.push(`  ${config.bot.prefix}security unblock <nomor> - Buka blokir`);
+            menuSections.push(`  ${config.bot.prefix}security list - Daftar pengguna terblokir`);
+            menuSections.push('');
+            menuSections.push('• *Kontrol Bot*');
+            menuSections.push(`  ${config.bot.prefix}security - Panel kontrol lengkap`);
+            menuSections.push('');
+        }
+
         // Commands per category
         for (const category of categories.sort()) {
             const commands = commandRegistry.getByCategory(category);
             if (commands.length === 0) continue;
+            
+            // Filter out owner-only commands for non-owners
+            const visibleCommands = commands.filter(cmd => 
+                isOwner || !config.isOwnerOnlyCommand(cmd.name)
+            );
+            
+            // Skip category if no visible commands
+            if (visibleCommands.length === 0) continue;
 
             const categoryName = this.getCategoryNameID(category);
             menuSections.push(`${this.getCategoryEmoji(category)} *${categoryName}*`);
             
-            for (const cmd of commands) {
+            for (const cmd of visibleCommands) {
                 const aliases = cmd.aliases.length > 0 ? ` (${cmd.aliases.join(', ')})` : '';
                 menuSections.push(`• *${config.bot.prefix}${cmd.name}*${aliases}`);
                 if (cmd.description) {
@@ -695,10 +735,19 @@ class MenuCommand extends CommandBase {
         await this.reply(sock, from, msg, sections.join('\n'));
     }
 
-    async sendCategoryHelp(sock, from, msg, category) {
+    async sendCategoryHelp(sock, from, msg, category, isOwner) {
         const commands = commandRegistry.getByCategory(category.toLowerCase());
         
         if (commands.length === 0) {
+            return await this.reply(sock, from, msg, `❌ Kategori "${category}" tidak ditemukan.`);
+        }
+        
+        // Filter out owner-only commands for non-owners
+        const visibleCommands = commands.filter(cmd => 
+            isOwner || !config.isOwnerOnlyCommand(cmd.name)
+        );
+        
+        if (visibleCommands.length === 0) {
             return await this.reply(sock, from, msg, `❌ Kategori "${category}" tidak ditemukan.`);
         }
 
@@ -708,7 +757,7 @@ class MenuCommand extends CommandBase {
         sections.push(`${this.getCategoryEmoji(category)} *${categoryName.toUpperCase()}*`);
         sections.push('');
 
-        for (const cmd of commands) {
+        for (const cmd of visibleCommands) {
             sections.push(`*${config.bot.prefix}${cmd.name}*`);
             if (cmd.description) {
                 sections.push(`📝 ${this.translateDescription(cmd.description)}`);

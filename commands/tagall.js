@@ -55,7 +55,7 @@ class TagAllCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Failed to tag members.');
+            await this.reply(sock, from, msg, '❌ *Gagal Tag Anggota*\n\n😔 Maaf, gagal tag semua anggota.\n💡 Pastikan bot adalah admin grup.');
         }
     }
 }

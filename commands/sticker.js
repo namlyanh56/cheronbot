@@ -38,10 +38,10 @@ class StickerCommand extends CommandBase {
         // Check if sharp is available
         if (!this.sharp) {
             return await this.reply(sock, from, msg,
-                '❌ Feature not available!\n\n' +
-                'The sticker command requires Sharp library.\n' +
-                'This dependency is currently disabled via environment configuration.\n\n' +
-                'Contact admin to enable: ENABLE_SHARP=true'
+                '❌ *Fitur Tidak Tersedia*\n\n' +
+                '😔 Perintah sticker memerlukan Sharp.\n' +
+                'Dependensi ini sedang dinonaktifkan.\n\n' +
+                '💡 Hubungi admin untuk mengaktifkan: ENABLE_SHARP=true'
             );
         }
 
@@ -54,7 +54,7 @@ class StickerCommand extends CommandBase {
 
             const imageMessage = isImg || isQuoted;
             if (!imageMessage) {
-                return await this.reply(sock, from, msg, '❌ Kirim atau reply gambar dulu!');
+                return await this.reply(sock, from, msg, '❌ *Gambar Diperlukan*\n\n📝 Kirim atau reply gambar terlebih dahulu!\n\n💡 *Cara Pakai:*\nKirim gambar dengan caption `.sticker` atau reply gambar dengan `.sticker`');
             }
 
             // Download image
@@ -75,7 +75,7 @@ class StickerCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Gagal membuat stiker. Pastikan gambarnya valid.');
+            await this.reply(sock, from, msg, '❌ *Gagal Membuat Stiker*\n\n😔 Maaf, gagal membuat stiker.\n💡 Pastikan gambarnya valid.');
         }
     }
 }

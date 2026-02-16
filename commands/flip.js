@@ -28,9 +28,9 @@ class FlipCommand extends CommandBase {
         const emoji = isHeads ? '🗣️' : '🦅';
 
         const response = 
-`🪙 *Coin Flip*
+`🪙 *Lempar Koin*
 
-🔄 Flipping...
+🔄 Melempar...
 .
 .
 .

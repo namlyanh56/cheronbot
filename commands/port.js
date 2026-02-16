@@ -86,7 +86,7 @@ class PortCommand extends CommandBase {
             return await this.searchPort(sock, from, msg, query);
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Gagal mencari informasi port.');
+            await this.reply(sock, from, msg, '❌ *Gagal Mencari Port*\n\n😔 Maaf, terjadi kesalahan.\n💡 Silakan coba lagi.');
         }
     }
 

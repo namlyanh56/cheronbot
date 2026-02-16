@@ -48,7 +48,7 @@ class GempaCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Failed to fetch earthquake data from BMKG.');
+            await this.reply(sock, from, msg, '❌ *Gagal Mengambil Data Gempa*\n\n😔 Maaf, terjadi kesalahan saat mengambil data dari BMKG.\n💡 Silakan coba lagi.');
         }
     }
 

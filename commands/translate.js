@@ -64,7 +64,7 @@ ${translated}`;
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Terjemahan gagal. Periksa kode bahasa.');
+            await this.reply(sock, from, msg, '❌ *Terjemahan Gagal*\n\n😔 Maaf, terjemahan gagal.\n💡 Periksa kode bahasa dan coba lagi.');
         }
     }
 }

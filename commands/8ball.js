@@ -50,7 +50,12 @@ class EightBallCommand extends CommandBase {
 
         if (!args[0]) {
             return await this.reply(sock, from, msg, 
-                '🔮 *Magic 8-Ball*\n\nAsk a yes/no question!\n\nUsage: .8ball <question>\n\nExample: .8ball Will I be rich?');
+                '🔮 *Magic 8-Ball*\n\n' +
+                '📝 *Cara Pakai:*\n' +
+                '`.8ball <pertanyaan yes/no>`\n\n' +
+                '💡 *Contoh:*\n' +
+                '• `.8ball Apakah saya akan kaya?`\n' +
+                '• `.8ball Will I succeed?`');
         }
 
         await this.react(sock, msg, '🔮');
@@ -61,9 +66,9 @@ class EightBallCommand extends CommandBase {
         const response = 
 `🔮 *Magic 8-Ball*
 
-❓ Question: _${question}_
+❓ Pertanyaan: _${question}_
 
-🎱 Answer: **${answer}**`;
+🎱 Jawaban: **${answer}**`;
 
         await this.reply(sock, from, msg, response);
         await this.react(sock, msg, '✅');

@@ -71,7 +71,7 @@ class TimeCommand extends CommandBase {
         if (!timezone) {
             const cities = Object.keys(this.timezones).slice(0, 10).join(', ');
             return await this.reply(sock, from, msg, 
-                `❌ City not found.\n\nTry: ${cities}...\n\nOr type .time to see multiple timezones`);
+                `❌ *Kota Tidak Ditemukan*\n\n💡 Coba: ${cities}...\n\n📝 Atau ketik .time untuk melihat beberapa zona waktu`);
         }
 
         try {
@@ -82,18 +82,18 @@ class TimeCommand extends CommandBase {
             });
 
             const response = 
-`🕐 *Time in ${args[0]}*
+`🕐 *Waktu di ${args[0]}*
 
 📅 ${time}
 
-🌍 Timezone: ${timezone}`;
+🌍 Zona Waktu: ${timezone}`;
 
             await this.reply(sock, from, msg, response);
             await this.react(sock, msg, '✅');
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Failed to get time for that location.');
+            await this.reply(sock, from, msg, '❌ *Gagal Mengambil Waktu*\n\n😔 Maaf, terjadi kesalahan.\n💡 Silakan coba lokasi lain.');
         }
     }
 
@@ -124,7 +124,7 @@ class TimeCommand extends CommandBase {
             }
         }
 
-        response += `\n_Type .time <city> for specific location_`;
+        response += `\n_Ketik .time <kota> untuk lokasi spesifik_`;
 
         await this.reply(sock, from, msg, response);
         await this.react(sock, msg, '✅');

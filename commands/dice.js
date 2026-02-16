@@ -56,13 +56,13 @@ class DiceCommand extends CommandBase {
             const diceEmoji = '🎲';
             const rollsText = rolls.join(', ');
 
-            let response = `${diceEmoji} *Dice Roll*\n\n`;
-            response += `🎯 Rolling ${numDice}d${numSides}\n\n`;
-            response += `📊 Results: ${rollsText}\n`;
+            let response = `${diceEmoji} *Lempar Dadu*\n\n`;
+            response += `🎯 Melempar ${numDice}d${numSides}\n\n`;
+            response += `📊 Hasil: ${rollsText}\n`;
             
             if (numDice > 1) {
                 response += `➕ Total: **${total}**\n`;
-                response += `📈 Average: ${(total / numDice).toFixed(2)}`;
+                response += `📈 Rata-rata: ${(total / numDice).toFixed(2)}`;
             }
 
             await this.reply(sock, from, msg, response);
@@ -70,7 +70,7 @@ class DiceCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Invalid dice format. Use: .dice 2d20');
+            await this.reply(sock, from, msg, '❌ *Format Tidak Valid*\n\n😔 Maaf, format dadu tidak valid.\n💡 Contoh: `.dice 2d20`');
         }
     }
 }

@@ -74,7 +74,7 @@ class IPInfoCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Gagal mendapatkan informasi IP.');
+            await this.reply(sock, from, msg, '❌ *Gagal Mengambil Data*\n\n😔 Maaf, tidak dapat mengambil informasi IP.\n💡 Periksa format IP dan coba lagi.');
         }
     }
 

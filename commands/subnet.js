@@ -76,7 +76,7 @@ class SubnetCommand extends CommandBase {
 
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Gagal menghitung subnet.');
+            await this.reply(sock, from, msg, '❌ *Gagal Menghitung Subnet*\n\n😔 Maaf, terjadi kesalahan.\n💡 Periksa format IP/CIDR dan coba lagi.');
         }
     }
 

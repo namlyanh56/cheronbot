@@ -71,7 +71,7 @@ class NetInfoCommand extends CommandBase {
             await this.react(sock, msg, '✅');
         } catch (error) {
             this.logError(error, context);
-            await this.reply(sock, from, msg, '❌ Gagal menampilkan informasi.');
+            await this.reply(sock, from, msg, '❌ *Gagal Menampilkan Informasi*\n\n😔 Maaf, terjadi kesalahan.\n💡 Silakan coba lagi.');
         }
     }
 

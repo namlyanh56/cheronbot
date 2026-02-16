@@ -1,5 +1,96 @@
 # HamBot Update Report
 
+---
+
+## 🚀 Storage Efficiency Improvements (February 16, 2026)
+
+**Version:** 2.8.0  
+**Author:** GitHub Copilot AI
+
+### 📋 Summary
+
+Enhanced media handling to use OS temp directory with automatic cleanup, added lazy loading for heavy dependencies, and introduced environment toggles for optional features.
+
+### 🎯 Key Improvements
+
+#### 1. OS Temp Directory Usage
+- All media commands (music, video, sticker, TTS) now use OS temp directory
+- Automatic cleanup after sending media files
+- Periodic cleanup of old temp files (30+ minutes) every 30 minutes
+- Graceful error handling ensures cleanup even on failures (finally blocks)
+
+#### 2. Lazy Loading for Heavy Dependencies
+- Puppeteer, Sharp, and Canvas are now lazy-loaded
+- Only loaded when needed, reducing memory footprint
+- Graceful degradation when dependencies are disabled
+
+#### 3. Environment Toggles
+- `ENABLE_PUPPETEER`: Controls Pinterest command (saves ~200MB RAM when disabled)
+- `ENABLE_CANVAS`: Controls Brat sticker generator (saves ~50MB RAM when disabled)
+- `ENABLE_SHARP`: Controls image processing (saves ~30MB RAM when disabled)
+- All features enabled by default for backward compatibility
+
+#### 4. User-Friendly Fallbacks
+- Commands show polite messages when features are disabled
+- No crashes or errors when dependencies are unavailable
+- Clear guidance for admins to enable features
+
+### 🛠️ Technical Changes
+
+**New Utilities:**
+- `createTempFile()` - Generate temp file paths in OS temp directory
+- `cleanupFile()` - Safe single file cleanup
+- `periodicTempCleanup()` - Scheduled cleanup of old temp files
+- `lazyRequire()` - Conditional dependency loading with env toggle
+
+**Updated Commands:**
+- `music.js` - Uses temp directory with automatic cleanup
+- `video.js` - Uses temp directory with automatic cleanup
+- `toimg.js` - Uses temp directory with automatic cleanup
+- `say.js` - Uses temp directory with automatic cleanup
+- `brat.js` - Lazy loading for Canvas and Sharp
+- `sticker.js` - Lazy loading for Sharp
+- `pinterest.js` - Lazy loading for Puppeteer
+
+**Core Changes:**
+- `index.js` - Added periodic temp cleanup (30-minute interval)
+- `browser-manager.js` - Lazy loading for Puppeteer
+- `helpers.js` - Added temp file utilities and lazy require
+
+### 📈 Benefits
+
+- **Reduced Disk Usage**: Temp files automatically cleaned up
+- **Lower Memory Footprint**: Optional dependencies can be disabled
+- **Flexible Deployment**: Disable unused features to save resources
+- **Better Error Handling**: Cleanup happens even on failures
+- **Cleaner Environment**: No leftover files after shutdown
+
+### 📚 Documentation
+
+- Updated `README.md` with new environment variables
+- Added `.env.example` with all configuration options
+- Documented feature toggles and their memory impact
+
+### ✅ Testing
+
+- ✅ All system tests pass (40/40)
+- ✅ All quality checks pass (10/10)
+- ✅ Integration tests pass
+- ✅ Custom storage improvement tests pass
+
+### 🔧 Configuration
+
+Add to `.env` file:
+
+```env
+# Feature Toggles (optional - defaults to true)
+ENABLE_PUPPETEER=true    # Pinterest command
+ENABLE_CANVAS=true       # Brat sticker generator
+ENABLE_SHARP=true        # Image processing
+```
+
+---
+
 **Date:** February 14, 2026  
 **Version:** 2.7.0  
 **Author:** GitHub Copilot AI

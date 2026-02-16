@@ -8,7 +8,8 @@ const CommandBase = require('./base');
 const httpClient = require('../utils/http-client');
 const config = require('../config');
 const { spawn } = require('child_process');
-const { generateFilename, cleanupFiles } = require('../utils/helpers');
+const { createTempFile, cleanupFiles } = require('../utils/helpers');
+const path = require('path');
 const fsPromises = require('fs').promises;
 
 class SayCommand extends CommandBase {
@@ -119,7 +120,10 @@ class SayCommand extends CommandBase {
 
         await this.react(sock, msg, '🎤');
 
-        const filePrefix = generateFilename('tts', '');
+        const tempFile = createTempFile('tts', 'mp3');
+        const tempDir = path.dirname(tempFile);
+        const tempBase = path.basename(tempFile, '.mp3');
+        const filePrefix = path.join(tempDir, tempBase);
 
         try {
             // Panggil ElevenLabs API
@@ -167,7 +171,7 @@ class SayCommand extends CommandBase {
             await this.reply(sock, from, msg, errorMsg);
         } finally {
             // Cleanup temporary files
-            await cleanupFiles(filePrefix);
+            await cleanupFiles(tempBase);
         }
     }
 

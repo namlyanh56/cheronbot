@@ -8,11 +8,30 @@ const logger = require('./utils/logger');
 const browserManager = require('./utils/browser-manager');
 const cache = require('./utils/cache');
 const security = require('./utils/security');
+const { periodicTempCleanup } = require('./utils/helpers');
 
 // Use the modular handler directly
 const handler = require('./handler');
 
 let sock = null;
+let tempCleanupInterval = null;
+
+// Start periodic temp cleanup (every 30 minutes)
+function startTempCleanup() {
+    const prefixes = ['music_', 'video_', 'sticker_', 'tts_'];
+    
+    // Initial cleanup on startup
+    periodicTempCleanup(prefixes).catch(err => {
+        logger.error(err, { context: 'temp-cleanup-startup' });
+    });
+    
+    // Periodic cleanup every 30 minutes
+    tempCleanupInterval = setInterval(() => {
+        periodicTempCleanup(prefixes).catch(err => {
+            logger.error(err, { context: 'temp-cleanup' });
+        });
+    }, 30 * 60 * 1000); // 30 minutes
+}
 
 async function startBot() {
     try {
@@ -74,6 +93,9 @@ async function startBot() {
                 });
             }
         });
+        
+        // Start periodic temp cleanup
+        startTempCleanup();
 
     } catch (error) {
         logger.error(error, { context: 'bot-startup' });
@@ -86,6 +108,11 @@ async function shutdown() {
     logger.info('Shutting down gracefully...');
 
     try {
+        // Stop temp cleanup interval
+        if (tempCleanupInterval) {
+            clearInterval(tempCleanupInterval);
+        }
+        
         // Close WhatsApp connection
         if (sock) {
             await sock.end();
